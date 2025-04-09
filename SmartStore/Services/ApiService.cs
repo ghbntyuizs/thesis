@@ -108,7 +108,12 @@ namespace SmartStorePOS.Services
                 Encoding.UTF8,
                 "application/json");
 
-            var response = await _httpClient.PostAsync("/api/order", content);
+            var apiUrl = "/api/order";
+            if (ConfigurationManager.AppSettings["IsMockOrder"] == "true")
+            {
+                apiUrl = "/api/order/mock";
+            }
+            var response = await _httpClient.PostAsync(apiUrl, content);
             response.EnsureSuccessStatusCode();
 
             var responseString = await response.Content.ReadAsStringAsync();
