@@ -1,0 +1,507 @@
+﻿<UserControl x:Class="SmartStorePOS.Views.OrderView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SmartStorePOS.Views"
+             mc:Ignorable="d" 
+             d:DesignHeight="768" d:DesignWidth="1024">
+
+    <!--<Grid>
+        <Grid.Background>
+            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                <GradientStop Color="#F0F0F0" Offset="0"/>
+                <GradientStop Color="#E0E0E0" Offset="1"/>
+            </LinearGradientBrush>
+        </Grid.Background>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="70"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="80"/>
+        </Grid.RowDefinitions>
+
+        -->
+    <!-- Header -->
+    <!--
+        <Border Grid.Row="0" Background="#333333">
+            <Grid>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="20,0">
+                    <TextBlock Text="Tạo đơn hàng mới" FontSize="24" FontWeight="Bold" Foreground="White"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        -->
+    <!-- Main Content -->
+    <!--
+        <Grid Grid.Row="1" Margin="20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="0.4*"/>
+                <ColumnDefinition Width="0.6*"/>
+            </Grid.ColumnDefinitions>
+
+            -->
+    <!-- Left Side - Images -->
+    <!--
+            <Border Grid.Column="0" Background="White" Margin="10" CornerRadius="10" 
+                    BorderBrush="#DDDDDD" BorderThickness="1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="Ảnh đơn hàng" FontSize="16" FontWeight="SemiBold" Margin="10"/>
+
+                    <Border Grid.Row="1" BorderBrush="#EEEEEE" BorderThickness="1" Margin="10" Background="#F8F8F8">
+                        <Grid>
+                            <Image Source="{Binding CapturedImage1}" Stretch="Uniform" Margin="5"/>
+                            <TextBlock Visibility="{Binding IsCameraRunning, Converter={StaticResource BooleanToVisibilityConverter}}" Text="Máy ảnh đang chạy..."
+                               Foreground="Red" FontSize="12" FontWeight="SemiBold" Margin="5" 
+                               HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
+                            <TextBlock Visibility="{Binding IsCameraRunning, Converter={StaticResource BooleanToVisibilityConverter}}" Text="Máy ảnh đang chạy..."
+                               Foreground="Red" FontSize="12" FontWeight="SemiBold" Margin="5" 
+                               HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
+                        </Grid>
+                    </Border>
+
+                    <Border Grid.Row="2" BorderBrush="#EEEEEE" BorderThickness="1" Margin="10"
+                            Background="#F8F8F8">
+                        <Image Source="{Binding CapturedImage2}" Stretch="Uniform" Margin="5"/>
+                    </Border>
+
+                    <Border Grid.Row="3" BorderBrush="#EEEEEE" BorderThickness="1" Margin="10"
+                            Background="#F8F8F8">
+                        <Image Source="{Binding CapturedImage3}" Stretch="Uniform" Margin="5"/>
+                    </Border>
+                </Grid>
+            </Border>
+
+            -->
+    <!-- Right Side - Product List -->
+    <!--
+            <Border Grid.Column="1" Background="White" Margin="10" CornerRadius="10" 
+                    BorderBrush="#DDDDDD" BorderThickness="1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="Danh sách sản phẩm" FontSize="16" FontWeight="SemiBold" Margin="10"/>
+
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding Items}" 
+                              AutoGenerateColumns="False" 
+                              IsReadOnly="True"
+                              Margin="10"
+                              BorderThickness="1"
+                              BorderBrush="#DDDDDD"
+                              Background="White"
+                              RowBackground="White"
+                              AlternatingRowBackground="#F9F9F9"
+                              GridLinesVisibility="Horizontal"
+                              ColumnHeaderHeight="40"
+                              RowHeight="30"
+                              CanUserResizeColumns="True"
+                              CanUserSortColumns="True"
+                              HeadersVisibility="Column">
+                        <DataGrid.Resources>
+                            <Style TargetType="DataGridColumnHeader">
+                                <Setter Property="Background" Value="#F0F0F0"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                <Setter Property="Padding" Value="10,5"/>
+                            </Style>
+                        </DataGrid.Resources>
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Tên sản phẩm" Binding="{Binding ProductName}" Width="*"/>
+                            <DataGridTextColumn Header="Loại" Binding="{Binding CategoryName}" Width="0.8*"/>
+                            <DataGridTextColumn Header="Số lượng" Binding="{Binding Count}" Width="0.5*"/>
+                            <DataGridTextColumn Header="Đơn giá" Binding="{Binding UnitPrice, StringFormat='{}{0:N0} đ'}" Width="0.8*"/>
+                            <DataGridTextColumn Header="Thành tiền" Binding="{Binding Total, StringFormat='{}{0:N0} đ'}" Width="0.8*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+
+            -->
+    <!-- Overlay for Capturing/Processing -->
+    <!--
+            <Border Grid.ColumnSpan="2" Background="#80000000" 
+                    Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding OverlayText, FallbackValue='Đang chụp ảnh...'}"
+                               Foreground="White" 
+                               FontSize="24" 
+                               HorizontalAlignment="Center" 
+                               Margin="0,10"/>
+                    <ProgressBar IsIndeterminate="True" 
+                                 Width="300" 
+                                 Height="10"
+                                 Foreground="#4CAF50"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        -->
+    <!-- Footer -->
+    <!--
+        <Border Grid.Row="2" Background="#F5F5F5" BorderBrush="#DDDDDD" BorderThickness="0,1,0,0">
+            <Grid>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="20,0">
+                    -->
+    <!-- Capture Button Moved to Left Side -->
+    <!--
+                    <Button Command="{Binding CaptureImagesCommand}" Width="160" Height="40" 
+                            Background="#2196F3" Foreground="White" FontSize="14" FontWeight="SemiBold"
+                            BorderThickness="0" Cursor="Hand" Margin="0,0,20,0">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" 
+                                        BorderBrush="{TemplateBinding BorderBrush}" 
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        CornerRadius="4">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE722;" FontFamily="Segoe MDL2 Assets" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="{Binding CaptureButtonText, FallbackValue='Chụp ảnh'}"/>
+                        </StackPanel>
+                    </Button>
+
+                    <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" Margin="20,0,0,0" 
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="20,0">
+                    -->
+    <!-- Total Amount -->
+    <!--
+                    <Border Background="#E0F2F1" BorderBrush="#B2DFDB" BorderThickness="1" CornerRadius="4" 
+                            Padding="15,8" Margin="0,0,20,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Tổng tiền: " FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding Total, StringFormat='{}{0:N0} đ'}" FontSize="16" FontWeight="Bold" 
+                                       Foreground="#00796B" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    -->
+    <!-- Cancel Button Moved to Right Side -->
+    <!--
+                    <Button Command="{Binding CancelCommand}" Visibility="{Binding IsShowCancelButton, Converter={StaticResource BooleanToVisibilityConverter}}" Width="120" Height="40" 
+                            Background="#F44336" Foreground="White" FontSize="14" FontWeight="SemiBold"
+                            BorderThickness="0" Cursor="Hand" Margin="0,0,20,0">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" 
+                                        BorderBrush="{TemplateBinding BorderBrush}" 
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        CornerRadius="4">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE711;" FontFamily="Segoe MDL2 Assets" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="Hủy bỏ"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding ProcessOrderCommand}" Visibility="{Binding IsShowOrderButton, Converter={StaticResource BooleanToVisibilityConverter}}" Width="160" Height="40" 
+                            Background="#4CAF50" Foreground="White" FontSize="14" FontWeight="SemiBold"
+                            BorderThickness="0" Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" 
+                                        BorderBrush="{TemplateBinding BorderBrush}" 
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        CornerRadius="4">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE930;" FontFamily="Segoe MDL2 Assets" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="{Binding OrderText , FallbackValue='Xử lý đơn hàng'}" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>-->
+    <Grid>
+        <Grid.Background>
+            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                <GradientStop Color="#F0F0F0" Offset="0"/>
+                <GradientStop Color="#E0E0E0" Offset="1"/>
+            </LinearGradientBrush>
+        </Grid.Background>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="70"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="80"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#333333">
+            <Grid>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="20,0">
+                    <TextBlock Text="Tạo đơn hàng mới" FontSize="24" FontWeight="Bold" Foreground="White"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="1" Margin="20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="0.4*"/>
+                <ColumnDefinition Width="0.6*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Left Side - Images -->
+            <Border Grid.Column="0" Background="White" Margin="10" CornerRadius="10" 
+                BorderBrush="#DDDDDD" BorderThickness="1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="Ảnh đơn hàng" FontSize="16" FontWeight="SemiBold" Margin="10"/>
+
+                    <!-- Camera 1 -->
+                    <Border Grid.Row="1" BorderBrush="#EEEEEE" BorderThickness="1" Margin="10" Background="#F8F8F8">
+                        <Grid>
+                            <Image Source="{Binding CapturedImage1}" Stretch="Uniform" Margin="5"/>
+                            <TextBlock Visibility="{Binding IsCameraRunning, Converter={StaticResource BooleanToVisibilityConverter}}" Text="Máy ảnh đang chạy..."
+                           Foreground="Red" FontSize="12" FontWeight="SemiBold" Margin="5" 
+                           HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- URL for Camera 1 -->
+                    <Grid Grid.Row="2" Visibility="{Binding IsImageUploaded, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" Text="{Binding ImageUrl1, Mode=OneWay}" 
+                             IsReadOnly="True" Margin="10,0,5,5" 
+                             VerticalAlignment="Center"
+                             Padding="5"
+                             BorderBrush="#DDDDDD"
+                             Background="#F5F5F5"/>
+                        <Button Grid.Column="1" Command="{Binding CopyImageUrl1Command}" 
+                            Margin="0,0,10,5" Padding="5" 
+                            Background="#2196F3" Foreground="White"
+                            BorderThickness="0" Cursor="Hand">
+                            <TextBlock Text="Copy" FontSize="12"/>
+                        </Button>
+                    </Grid>
+
+                    <!-- Camera 2 -->
+                    <Border Grid.Row="3" BorderBrush="#EEEEEE" BorderThickness="1" Margin="10" Background="#F8F8F8">
+                        <Image Source="{Binding CapturedImage2}" Stretch="Uniform" Margin="5"/>
+                    </Border>
+
+                    <!-- URL for Camera 2 -->
+                    <Grid Grid.Row="4" Visibility="{Binding IsImageUploaded, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" Text="{Binding ImageUrl2, Mode=OneWay}" 
+                             IsReadOnly="True" Margin="10,0,5,5" 
+                             VerticalAlignment="Center"
+                             Padding="5"
+                             BorderBrush="#DDDDDD"
+                             Background="#F5F5F5"/>
+                        <Button Grid.Column="1" Command="{Binding CopyImageUrl2Command}" 
+                            Margin="0,0,10,5" Padding="5" 
+                            Background="#2196F3" Foreground="White"
+                            BorderThickness="0" Cursor="Hand">
+                            <TextBlock Text="Copy" FontSize="12"/>
+                        </Button>
+                    </Grid>
+
+                    <!-- Camera 3 -->
+                    <Border Grid.Row="5" BorderBrush="#EEEEEE" BorderThickness="1" Margin="10" Background="#F8F8F8">
+                        <Image Source="{Binding CapturedImage3}" Stretch="Uniform" Margin="5"/>
+                    </Border>
+
+                    <!-- URL for Camera 3 -->
+                    <Grid Grid.Row="6" Visibility="{Binding IsImageUploaded, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" Text="{Binding ImageUrl3, Mode=OneWay}" 
+                             IsReadOnly="True" Margin="10,0,5,5" 
+                             VerticalAlignment="Center"
+                             Padding="5"
+                             BorderBrush="#DDDDDD"
+                             Background="#F5F5F5"/>
+                        <Button Grid.Column="1" Command="{Binding CopyImageUrl3Command}" 
+                            Margin="0,0,10,5" Padding="5" 
+                            Background="#2196F3" Foreground="White"
+                            BorderThickness="0" Cursor="Hand">
+                            <TextBlock Text="Copy" FontSize="12"/>
+                        </Button>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <!-- Right Side - Product List -->
+            <Border Grid.Column="1" Background="White" Margin="10" CornerRadius="10" 
+                BorderBrush="#DDDDDD" BorderThickness="1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="Danh sách sản phẩm" FontSize="16" FontWeight="SemiBold" Margin="10"/>
+
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding Items}" 
+                          AutoGenerateColumns="False" 
+                          IsReadOnly="True"
+                          Margin="10"
+                          BorderThickness="1"
+                          BorderBrush="#DDDDDD"
+                          Background="White"
+                          RowBackground="White"
+                          AlternatingRowBackground="#F9F9F9"
+                          GridLinesVisibility="Horizontal"
+                          ColumnHeaderHeight="40"
+                          RowHeight="30"
+                          CanUserResizeColumns="True"
+                          CanUserSortColumns="True"
+                          HeadersVisibility="Column">
+                        <DataGrid.Resources>
+                            <Style TargetType="DataGridColumnHeader">
+                                <Setter Property="Background" Value="#F0F0F0"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                <Setter Property="Padding" Value="10,5"/>
+                            </Style>
+                        </DataGrid.Resources>
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Tên sản phẩm" Binding="{Binding ProductName}" Width="*"/>
+                            <DataGridTextColumn Header="Loại" Binding="{Binding CategoryName}" Width="0.8*"/>
+                            <DataGridTextColumn Header="Số lượng" Binding="{Binding Count}" Width="0.5*"/>
+                            <DataGridTextColumn Header="Đơn giá" Binding="{Binding UnitPrice, StringFormat='{}{0:N0} đ'}" Width="0.8*"/>
+                            <DataGridTextColumn Header="Thành tiền" Binding="{Binding Total, StringFormat='{}{0:N0} đ'}" Width="0.8*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+
+            <!-- Overlay for Capturing/Processing -->
+            <Border Grid.ColumnSpan="2" Background="#80000000" 
+                Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding OverlayText, FallbackValue='Đang chụp ảnh...'}"
+                           Foreground="White" 
+                           FontSize="24" 
+                           HorizontalAlignment="Center" 
+                           Margin="0,10"/>
+                    <ProgressBar IsIndeterminate="True" 
+                             Width="300" 
+                             Height="10"
+                             Foreground="#4CAF50"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Footer -->
+        <Border Grid.Row="2" Background="#F5F5F5" BorderBrush="#DDDDDD" BorderThickness="0,1,0,0">
+            <Grid>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="20,0">
+                    <!-- Capture Button Moved to Left Side -->
+                    <Button Command="{Binding CaptureImagesCommand}" Width="160" Height="40" 
+                        Background="#2196F3" Foreground="White" FontSize="14" FontWeight="SemiBold"
+                        BorderThickness="0" Cursor="Hand" Margin="0,0,20,0">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" 
+                                    BorderBrush="{TemplateBinding BorderBrush}" 
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="4">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE722;" FontFamily="Segoe MDL2 Assets" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="{Binding CaptureButtonText, FallbackValue='Chụp ảnh'}"/>
+                        </StackPanel>
+                    </Button>
+
+                    <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" Margin="20,0,0,0" 
+                           VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="20,0">
+                    <!-- Total Amount -->
+                    <Border Background="#E0F2F1" BorderBrush="#B2DFDB" BorderThickness="1" CornerRadius="4" 
+                        Padding="15,8" Margin="0,0,20,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Tổng tiền: " FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding Total, StringFormat='{}{0:N0} đ'}" FontSize="16" FontWeight="Bold" 
+                                   Foreground="#00796B" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Cancel Button Moved to Right Side -->
+                    <Button Command="{Binding CancelCommand}" Visibility="{Binding IsShowCancelButton, Converter={StaticResource BooleanToVisibilityConverter}}" Width="120" Height="40" 
+                        Background="#F44336" Foreground="White" FontSize="14" FontWeight="SemiBold"
+                        BorderThickness="0" Cursor="Hand" Margin="0,0,20,0">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" 
+                                    BorderBrush="{TemplateBinding BorderBrush}" 
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="4">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE711;" FontFamily="Segoe MDL2 Assets" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="Hủy bỏ"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding ProcessOrderCommand}" Visibility="{Binding IsShowOrderButton, Converter={StaticResource BooleanToVisibilityConverter}}" Width="160" Height="40" 
+                        Background="#4CAF50" Foreground="White" FontSize="14" FontWeight="SemiBold"
+                        BorderThickness="0" Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" 
+                                    BorderBrush="{TemplateBinding BorderBrush}" 
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="4">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE930;" FontFamily="Segoe MDL2 Assets" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="{Binding OrderText, FallbackValue='Xử lý đơn hàng'}" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
