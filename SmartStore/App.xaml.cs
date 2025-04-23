@@ -29,19 +29,22 @@ namespace SmartStorePOS
         private void ConfigureServices(ServiceCollection services)
         {
             // Register services
-            services.AddSingleton<IDialogService, DialogService>();
+            services.AddSingleton<IDialogService>(sp => new DialogService(sp));
             services.AddSingleton<IApiService, ApiService>();
             services.AddSingleton<INavigationService, NavigationService>();
+            services.AddSingleton<IWebSocketService, WebSocketService>();
 
             // Register ViewModels
             services.AddTransient<LoginViewModel>();
             services.AddTransient<MainViewModel>();
             services.AddTransient<OrderViewModel>();
+            services.AddTransient<MembershipCardViewModel>();
 
             // Register Views
             services.AddTransient<LoginView>();
             services.AddTransient<MainView>();
             services.AddTransient<OrderView>();
+            services.AddTransient<MembershipCardWindow>();
 
             services.AddSingleton<MainWindow>();
         }
@@ -70,7 +73,7 @@ namespace SmartStorePOS
                 var apiService = serviceProvider.GetRequiredService<IApiService>();
                 apiService.SetToken(savedToken);
 
-                navigationService.NavigateTo<MainViewModel>();
+                navigationService.NavigateTo<OrderViewModel>();
             }
             else
             {

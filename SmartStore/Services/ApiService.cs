@@ -14,6 +14,9 @@ namespace SmartStorePOS.Services
         Task<LoginResponse> LoginAsync(string email, string password);
         Task<UploadResponse> UploadImageAsync(string filePath);
         Task<Order> CreateOrderAsync(CreateOrderRequest request);
+        Task<PaymentResponse> CreatePaymentAsync(CreatePaymentRequest request);
+        Task<Order> UpdateOrderWrongAsync(UpdateOrderWrongRequest request);
+        Task<GetProductResponse> GetProductsAsync(GetProductRequest request);
         string GenerateQrCodeUrl(string orderId);
         void SetToken(string token);
     }
@@ -73,9 +76,12 @@ namespace SmartStorePOS.Services
                 var byteArrayContent = new ByteArrayContent(fileBytes);
                 byteArrayContent.Headers.ContentType = new MediaTypeHeaderValue(mimeType); // Gán Content-Type
 
-                fileContent.Add(byteArrayContent, "file", fileName);
+                // Manually add Content-Disposition to mimic curl exactly
+                byteArrayContent.Headers.Add("Content-Disposition", $"form-data; name=\"file\"; filename=\"{fileName}\"");
 
-                var response = await _httpClient.PostAsync("/api/upload", fileContent);
+                fileContent.Add(byteArrayContent); // no need to pass "file" here again
+
+                var response = await _httpClient.PostAsync("/upload", fileContent);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -134,6 +140,81 @@ namespace SmartStorePOS.Services
             _accessToken = token;
             _httpClient.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", _accessToken);
+        }
+
+        /// <summary>
+        /// Create a payment using membership card
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<PaymentResponse> CreatePaymentAsync(CreatePaymentRequest request)
+        {
+            if (string.IsNullOrEmpty(_accessToken))
+                throw new InvalidOperationException("User not authenticated");
+
+            var content = new StringContent(
+                JsonSerializer.Serialize(request),
+                Encoding.UTF8,
+                "application/json");
+
+            var response = await _httpClient.PostAsync("/api/payment", content);
+            response.EnsureSuccessStatusCode();
+            var responseString = response.Content.ReadAsStringAsync();
+            var paymentResponse = JsonSerializer.Deserialize<PaymentResponse>(
+                responseString.Result,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            return paymentResponse;
+        }
+
+        /// <summary>
+        /// Cập nhật lại Order bị sai
+        /// </summary>
+        public async Task<Order> UpdateOrderWrongAsync(UpdateOrderWrongRequest request)
+        {
+            if (string.IsNullOrEmpty(_accessToken))
+                throw new InvalidOperationException("User not authenticated");
+
+            var content = new StringContent(
+                JsonSerializer.Serialize(request),
+                Encoding.UTF8,
+                "application/json");
+
+            var apiUrl = "api/order/live";
+            var response = await _httpClient.PostAsync(apiUrl, content);
+            response.EnsureSuccessStatusCode();
+
+            var responseString = await response.Content.ReadAsStringAsync();
+            var orderResponse = JsonSerializer.Deserialize<Order>(
+                responseString,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            return orderResponse;
+        }
+
+        public async Task<GetProductResponse> GetProductsAsync(GetProductRequest request)
+        {
+            var content = new StringContent(
+                JsonSerializer.Serialize(request),
+                Encoding.UTF8,
+                "application/json");
+
+            var response = await _httpClient.PostAsync("/api/product/get", content);
+            response.EnsureSuccessStatusCode();
+
+            var responseString = await response.Content.ReadAsStringAsync();
+            var products = JsonSerializer.Deserialize<GetProductResponse>(responseString,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            if (products != null && products.Items.Count > 0)
+            {
+                products.Items.ForEach(x =>
+                {
+                    x.GetBasePriceByStoreId();
+                });
+            }
+
+            return products;
         }
     }
 }

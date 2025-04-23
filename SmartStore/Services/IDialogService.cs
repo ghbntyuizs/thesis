@@ -1,4 +1,5 @@
-﻿using SmartStorePOS.ViewModels;
+﻿using Microsoft.Extensions.DependencyInjection;
+using SmartStorePOS.ViewModels;
 using SmartStorePOS.Views;
 using System.Windows;
 
@@ -11,10 +12,18 @@ namespace SmartStorePOS.Services
         bool ShowYesNoDialog(string title, string message);
         Task ShowInfoDialogAsync(string title, string message);
         void ShowInfoDialog(string title, string message);
+        T GetService<T>() where T : Window;
     }
 
     public class DialogService : IDialogService
     {
+        private readonly IServiceProvider _serviceProvider;
+
+        public DialogService(IServiceProvider serviceProvider)
+        {
+            _serviceProvider = serviceProvider;
+        }
+
         public Task<bool> ShowConfirmationAsync(string title, string message)
         {
             var dialog = new CustomDialog(DialogType.Confirmation, title, message);
@@ -52,6 +61,11 @@ namespace SmartStorePOS.Services
             var dialog = new CustomDialog(DialogType.Info, title, message);
             dialog.Owner = Application.Current.MainWindow;
             dialog.ShowDialog();
+        }
+
+        public T GetService<T>() where T : Window
+        {
+            return (T)ActivatorUtilities.CreateInstance(_serviceProvider, typeof(T));
         }
     }
 }

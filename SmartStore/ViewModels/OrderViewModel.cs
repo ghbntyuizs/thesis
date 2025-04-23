@@ -18,11 +18,9 @@ namespace SmartStorePOS.ViewModels
         private readonly IApiService _apiService;
         private readonly INavigationService _navigationService;
         private readonly IDialogService _dialogService;
-        private Order _order;
+        private readonly IWebSocketService _webSocketService;
+
         private string _qrCodeUrl;
-        private BitmapSource _capturedImage1;
-        private BitmapSource _capturedImage2;
-        private BitmapSource _capturedImage3;
         private bool _isLoading;
         private bool _isCapturing;
         private string _errorMessage;
@@ -32,19 +30,36 @@ namespace SmartStorePOS.ViewModels
         private string _overlayText;
         private string _orderText = "Xử lý đơn hàng";
         private bool _isShowOrderButton = true;
-        private bool _isShowCancelButton = true;
-        private ObservableCollection<OrderItem> _items;
-
-        // tính năng cho phép chụp ảnh từ 3 camera
-        private VideoCapture[] _videoCaptureArray = new VideoCapture[3];
-        private Mat[] _frameArray = new Mat[3];
-        private System.Windows.Threading.DispatcherTimer _timer;
-        private bool[] _cameraInitialized = new bool[3];
-
+        private bool _isShowCancelButton = false;
+        private bool _isReadOnly = true;
+        private bool _isAllowAddNewRow = false;
         private string _imageUrl1;
         private string _imageUrl2;
         private string _imageUrl3;
         private bool _isImageUploaded = false;
+        private const int _pageSize = int.MaxValue;
+        private const int _pageNumber = 1;
+        private bool _isLoadingProducts;
+
+        private Order _order;
+        private Order _lastOrder;
+        private ObservableCollection<OrderItem> _items;
+        private BitmapSource _capturedImage1;
+        private BitmapSource _capturedImage2;
+        private BitmapSource _capturedImage3;
+
+        // tính năng cho phép chụp ảnh từ 3 camera
+        private System.Windows.Threading.DispatcherTimer _timer;
+        private VideoCapture[] _videoCaptureArray = new VideoCapture[3];
+        private Mat[] _frameArray = new Mat[3];
+        private bool[] _cameraInitialized = new bool[3];
+        private ObservableCollection<ProductDTO> _productList;
+
+        public ObservableCollection<ProductDTO> ProductList
+        {
+            get => _productList;
+            set => SetProperty(ref _productList, value);
+        }
 
         public Order Order
         {
@@ -156,33 +171,65 @@ namespace SmartStorePOS.ViewModels
             set => SetProperty(ref _isImageUploaded, value);
         }
 
+        public bool IsReadOnly
+        {
+            get => _isReadOnly;
+            set
+            {
+                SetProperty(ref _isReadOnly, value);
+            }
+        }
+
+        public bool IsAllowAddNewRow
+        {
+            get => _isAllowAddNewRow;
+            set
+            {
+                SetProperty(ref _isAllowAddNewRow, value);
+            }
+        }
+
+        public Order LastOrder
+        {
+            get => _lastOrder;
+            set => SetProperty(ref _lastOrder, value);
+        }
+
+        public ICommand AddNewRowCommand { get; }
+        public ICommand DeleteOrderItemCommand { get; }
         public ICommand NewOrderCommand { get; }
         public ICommand LogoutCommand { get; }
         public ICommand CaptureImagesCommand { get; }
         public ICommand ProcessOrderCommand { get; }
         public ICommand CancelCommand { get; }
-
-        // Thêm các lệnh để copy URL
+        public ICommand HelpCommand { get; }
         public ICommand CopyImageUrl1Command { get; }
         public ICommand CopyImageUrl2Command { get; }
         public ICommand CopyImageUrl3Command { get; }
 
         // Thêm vào constructor
-        public OrderViewModel(IApiService apiService, INavigationService navigationService, IDialogService dialogService)
+        public OrderViewModel(IApiService apiService, INavigationService navigationService, IDialogService dialogService, IWebSocketService webSocketService)
         {
             _apiService = apiService;
             _navigationService = navigationService;
             _dialogService = dialogService;
+            _webSocketService = webSocketService;
+
+            //InitializeWebSocket();
 
             // Initialize collections
             Items = [];
+            ProductList = [];
 
             // Initialize commands
+            AddNewRowCommand = new RelayCommand(_ => AddNewRow());
+            DeleteOrderItemCommand = new RelayCommand(item => DeleteOrderItem(item as OrderItem));
             NewOrderCommand = new RelayCommand(_ => _navigationService.NavigateTo<MainViewModel>());
             LogoutCommand = new RelayCommand(_ => _navigationService.NavigateTo<LoginViewModel>());
             CaptureImagesCommand = new RelayCommand(async _ => await CaptureImages(), _ => !_isCameraRunning || !IsLoading);
             ProcessOrderCommand = new RelayCommand(async _ => await ProcessOrder(), _ => _hasImages && !IsLoading);
             CancelCommand = new RelayCommand(_ => Cancel());
+            HelpCommand = new RelayCommand(_ => _dialogService.ShowInfoDialog("Thông báo", "Tính năng đang được phát triển."));
 
             // Thêm các lệnh copy URL
             CopyImageUrl1Command = new RelayCommand(_ => CopyTextToClipboard(ImageUrl1));
@@ -222,7 +269,8 @@ namespace SmartStorePOS.ViewModels
             {
                 OrderId = Guid.NewGuid().ToString(),
                 Status = "CREATED",
-                CreatedDate = DateTime.Now
+                CreatedDate = DateTime.Now,
+                Items = [],
             };
 
             IsShowOrderButton = false;
@@ -257,6 +305,9 @@ namespace SmartStorePOS.ViewModels
                 }
                 else if (_isCapturing)
                 {
+                    if (IsLoading)
+                        return;
+
                     // Currently streaming, capture the image
                     IsLoading = true;
                     OverlayText = "Đang chụp ảnh ...";
@@ -267,7 +318,6 @@ namespace SmartStorePOS.ViewModels
                     OrderText = "Xử lý đơn hàng";
                     IsShowOrderButton = true;
                     _hasImages = true;
-
                     IsLoading = false;
                 }
                 else
@@ -342,6 +392,8 @@ namespace SmartStorePOS.ViewModels
                             IsCameraRunning = true;
                             _isCapturing = true;
                             IsLoading = false;
+                            _isCameraRunning = true;
+                            IsShowCancelButton = true;
                         });
                     }
                     catch (Exception ex)
@@ -563,9 +615,9 @@ namespace SmartStorePOS.ViewModels
             else
             {
                 // Dev mode
-                ImageUrl1 = "/images/3339516a-8b65-4826-9f19-88a8d887a271.jpg";
-                ImageUrl2 = "/images/3339516a-8b65-4826-9f19-88a8d887a272.jpg";
-                ImageUrl3 = "/images/3339516a-8b65-4826-9f19-88a8d887a273.jpg";
+                ImageUrl1 = ConfigurationManager.AppSettings["Img1Url"];
+                ImageUrl2 = ConfigurationManager.AppSettings["Img2Url"];
+                ImageUrl3 = ConfigurationManager.AppSettings["Img3Url"];
             }
 
             IsImageUploaded = true;
@@ -577,13 +629,24 @@ namespace SmartStorePOS.ViewModels
                 Image3 = ImageUrl3,
             });
 
+            LastOrder = orders;
+
             // Phần code còn lại giữ nguyên...
             Items.Clear();
             if (orders != null && orders.Items != null)
             {
                 foreach (var item in orders.Items)
                 {
-                    Items.Add(item);
+                    Items.Add(new OrderItem
+                    {
+                        CategoryId = item.CategoryId,
+                        CategoryName = item.CategoryName,
+                        ProductId = item.ProductId,
+                        ProductName = item.ProductName,
+                        UnitPrice = item.UnitPrice,
+                        Count = item.Count,
+                        Total = item.Total
+                    });
                 }
             }
 
@@ -636,11 +699,83 @@ namespace SmartStorePOS.ViewModels
                     CaptureButtonText = "Chụp lại";
                     OrderText = "Thanh toán";
                     IsShowOrderButton = true;
+                    IsReadOnly = false;
+                    IsAllowAddNewRow = true;
                 }
                 else
                 {
+                    if (!ValidateOrder())
+                        return;
+
+                    var hasChanged = CheckOrderChanged();
+                    if (hasChanged)
+                    {
+                        var dialogResult = _dialogService.ShowYesNoDialog("Xác nhận", "Đơn hàng đã thay đổi. Bạn có muốn tiếp tục không?");
+                        if (dialogResult == false)
+                            return;
+
+                        var updateOrder = await _apiService.UpdateOrderWrongAsync(new UpdateOrderWrongRequest
+                        {
+                            OldOrderId = _lastOrder.OrderId,
+                            Items = [.. Items.Select(x => new UpdateOrderWrongItems
+                            {
+                                ProductId = x.ProductId,
+                                Count = x.Count,
+                            })]
+                        });
+
+                        LastOrder = updateOrder;
+                        Items.Clear();
+                        if (updateOrder != null && updateOrder.Items != null)
+                        {
+                            foreach (var item in updateOrder.Items)
+                            {
+                                Items.Add(new OrderItem
+                                {
+                                    CategoryId = item.CategoryId,
+                                    CategoryName = item.CategoryName,
+                                    ProductId = item.ProductId,
+                                    ProductName = item.ProductName,
+                                    UnitPrice = item.UnitPrice,
+                                    Count = item.Count,
+                                    Total = item.Total
+                                });
+                            }
+                        }
+
+                        IsReadOnly = true;
+                        IsAllowAddNewRow = false;
+                    }
+
                     OverlayText = "Đang thực hiện thanh toán ...";
-                    new QRCodeWindow($"aistore://payment/{Order.OrderId}").ShowDialog();
+                    var paymentWindow = new PaymentMethodWindow();
+                    if (paymentWindow.ShowDialog() == true)
+                    {
+                        switch (paymentWindow.SelectedMethod)
+                        {
+                            case PaymentMethodWindow.PaymentMethod.QRCode:
+                                new QRCodeWindow($"aistore://payment/{Order.OrderId}").ShowDialog();
+                                break;
+                            case PaymentMethodWindow.PaymentMethod.MembershipCard:
+                                var membershipWindow = _dialogService.GetService<MembershipCardWindow>();
+                                MembershipCardViewModel membershipViewModel = membershipWindow.DataContext as MembershipCardViewModel;
+                                membershipViewModel.Order = LastOrder;
+                                membershipWindow.Owner = Application.Current.MainWindow;
+
+                                // sự kiện khi đóng cửa sổ
+                                membershipWindow.Closed += (s, e) =>
+                                {
+                                    if (membershipViewModel.PaymentResponse != null)
+                                    {
+                                        _dialogService.ShowInfoDialog("Thông báo", $"Đã thanh toán thành công số tiền {membershipViewModel.PaymentResponse.Amount:N0} VNĐ");
+                                        InitFormState();
+                                    }
+                                    membershipViewModel.Dispose();
+                                };
+                                membershipWindow.ShowDialog();
+                                break;
+                        }
+                    }
                 }
             }
             catch (Exception ex)
@@ -669,8 +804,210 @@ namespace SmartStorePOS.ViewModels
             // Stop camera before navigating away
             StopCameraStream();
 
+            // Reset the form state
+            InitFormState();
+
             // Navigate back or reset the form
-            _navigationService.NavigateTo<MainViewModel>();
+            //_navigationService.NavigateTo<MainViewModel>();
+        }
+
+        public void InitFormState()
+        {
+            // Reset all properties to their initial state
+            IsReadOnly = true;
+            IsAllowAddNewRow = false;
+            IsLoading = false;
+            IsCameraRunning = false;
+            OverlayText = string.Empty;
+            CaptureButtonText = "Bắt đầu chụp";
+            OrderText = "Xử lý đơn hàng";
+            IsShowOrderButton = true;
+            IsShowCancelButton = false;
+            _hasImages = false;
+
+            ImageUrl1 = string.Empty;
+            ImageUrl2 = string.Empty;
+            ImageUrl3 = string.Empty;
+
+            CapturedImage1 = null;
+            CapturedImage2 = null;
+            CapturedImage3 = null;
+
+            IsImageUploaded = false;
+            _isCapturing = false;
+            _isCameraRunning = false;
+            _isImageUploaded = false;
+            _errorMessage = string.Empty;
+            Items.Clear();
+            LastOrder = null;
+            Order = null;
+            Total = 0;
+            OnPropertyChanged(nameof(Total));
+            InitializeOrder();
+        }
+
+        public void OnProductSelected(ProductDTO selectedProduct, OrderItem orderItem)
+        {
+
+            if (selectedProduct != null && orderItem != null)
+            {
+                orderItem.ProductId = selectedProduct.ProductId?.ToString();
+                orderItem.ProductName = selectedProduct.ProductName;
+                orderItem.CategoryId = selectedProduct.CategoryId?.ToString();
+                orderItem.CategoryName = selectedProduct.CategoryName;
+                orderItem.UnitPrice = (decimal)(selectedProduct.BasePrice ?? 0);
+                orderItem.Count = 1;
+                orderItem.Total = orderItem.UnitPrice * orderItem.Count;
+                UpdateTotal();
+            }
+        }
+
+        /// <summary>
+        /// Validate Order
+        /// </summary>
+        private bool ValidateOrder()
+        {
+            string errorMessage = string.Empty;
+            if (Items == null || Items.Count == 0)
+            {
+                errorMessage = "Vui lòng thêm mặt hàng vào đơn hàng.";
+            }
+            foreach (var item in Items)
+            {
+                if (string.IsNullOrEmpty(item.ProductId))
+                {
+                    errorMessage = "Vui lòng chọn sản phẩm cho tất cả các mặt hàng.";
+                }
+                if (item.Count <= 0)
+                {
+                    errorMessage = "Số lượng mặt hàng phải lớn hơn 0.";
+                }
+            }
+
+            if (!string.IsNullOrEmpty(errorMessage))
+            {
+                _dialogService.ShowInfoDialog("Thông báo", errorMessage);
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Hàm so sánh Items hiện tại và Items trong _lastOrder
+        /// </summary>
+        private bool CheckOrderChanged()
+        {
+            if (_lastOrder == null || _lastOrder.Items == null || Items == null)
+                return false;
+
+            // nếu số lượng mặt hàng không giống nhau thì chắc chắn là khác
+            if (_lastOrder.Items.Count != Items.Count)
+                return true;
+
+            // So sánh từng mặt hàng
+            for (int i = 0; i < _lastOrder.Items.Count; i++)
+            {
+                if (_lastOrder.Items[i].ProductId != Items[i].ProductId ||
+                    _lastOrder.Items[i].Count != Items[i].Count ||
+                    _lastOrder.Items[i].UnitPrice != Items[i].UnitPrice)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public void CalculateTotalPrice()
+        {
+            if (Items != null && Items.Count > 0)
+            {
+                Total = Items.Sum(x => x.Total);
+                OnPropertyChanged(nameof(Total));
+            }
+        }
+
+        private async void InitializeWebSocket()
+        {
+            try
+            {
+                _webSocketService.MessageReceived += OnWebSocketMessageReceived;
+                await _webSocketService.ConnectAsync();
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Không thể kết nối WebSocket: {ex.Message}";
+            }
+        }
+
+        private void OnWebSocketMessageReceived(object sender, string message)
+        {
+            // TODO: Xử lý message từ WebSocket ở đây
+            Console.WriteLine($"Nhận message từ WebSocket: {message}");
+        }
+
+        public async Task LoadProducts(string searchText = null)
+        {
+            if (_isLoadingProducts) return;
+
+            try
+            {
+                _isLoadingProducts = true;
+
+                var request = new GetProductRequest
+                {
+                    pageNumber = _pageNumber,
+                    pageSize = _pageSize,
+                };
+
+                var result = await _apiService.GetProductsAsync(request);
+                if (result?.Items != null)
+                {
+                    foreach (var product in result.Items)
+                    {
+                        ProductList.Add(product);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Lỗi tải danh sách sản phẩm: {ex.Message}";
+            }
+            finally
+            {
+                _isLoadingProducts = false;
+            }
+        }
+
+        private void AddNewRow()
+        {
+            var newItem = new OrderItem
+            {
+                Count = 1
+            };
+            Items.Add(newItem);
+        }
+
+        private void DeleteOrderItem(OrderItem item)
+        {
+            if (item != null)
+            {
+                Items.Remove(item);
+                UpdateTotal();
+            }
+        }
+
+        private void UpdateTotal()
+        {
+            Total = Items.Sum(x => x.Total);
+            OnPropertyChanged(nameof(Total));
+
+            if (Order != null)
+            {
+                Order.Items = new List<OrderItem>(Items);
+                Order.Total = Total;
+            }
         }
 
         /// <summary>
@@ -678,6 +1015,9 @@ namespace SmartStorePOS.ViewModels
         /// </summary>
         public void Dispose()
         {
+            //await _webSocketService.DisconnectAsync();
+            //_webSocketService.MessageReceived -= OnWebSocketMessageReceived;
+
             StopCameraStream();
         }
     }

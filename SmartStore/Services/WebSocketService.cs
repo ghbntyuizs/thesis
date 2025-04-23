@@ -1,11 +1,12 @@
-﻿using System.Net.WebSockets;
+﻿using System.Configuration;
+using System.Net.WebSockets;
 using System.Text;
 
 namespace SmartStorePOS.Services
 {
     public interface IWebSocketService
     {
-        Task ConnectAsync(string deviceId);
+        Task ConnectAsync(string? deviceId = null);
         Task DisconnectAsync();
         event EventHandler<string> MessageReceived;
     }
@@ -14,18 +15,28 @@ namespace SmartStorePOS.Services
     {
         private ClientWebSocket _webSocket;
         private CancellationTokenSource _cts;
-        private readonly string _baseUrl = "wss://reinir.mooo.com/ws/pos/";
+        private readonly string _baseUrl = "wss://reinir.mooo.com/ws/pos";
+        private readonly string _deviceId;
+        private readonly string _token;
 
         public event EventHandler<string> MessageReceived;
 
-        public async Task ConnectAsync(string deviceId)
+        public WebSocketService()
+        {
+            _deviceId = ConfigurationManager.AppSettings["DeviceId"];
+            _token = ConfigurationManager.AppSettings["AppToken"];
+        }
+
+        public async Task ConnectAsync(string deviceId = null)
         {
             _webSocket = new ClientWebSocket();
             _cts = new CancellationTokenSource();
 
             try
             {
-                await _webSocket.ConnectAsync(new Uri($"{_baseUrl}{deviceId}"), _cts.Token);
+                var actualDeviceId = deviceId ?? _deviceId;
+                var wsUrl = $"{_baseUrl}/{actualDeviceId}?token={_token}";
+                await _webSocket.ConnectAsync(new Uri(wsUrl), _cts.Token);
                 _ = ReceiveMessagesAsync();
             }
             catch (Exception ex)

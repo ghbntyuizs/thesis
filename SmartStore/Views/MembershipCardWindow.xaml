@@ -1,0 +1,70 @@
+<Window x:Class="SmartStorePOS.Views.MembershipCardWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Thanh toán bằng thẻ thành viên" 
+        Height="300" 
+        Width="400"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize">
+
+    <Grid>
+        <Grid.Background>
+            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                <GradientStop Color="#F0F0F0" Offset="0"/>
+                <GradientStop Color="#E0E0E0" Offset="1"/>
+            </LinearGradientBrush>
+        </Grid.Background>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Text="Thanh toán bằng thẻ thành viên" 
+                   FontSize="20" 
+                   FontWeight="SemiBold" 
+                   Margin="20"
+                   HorizontalAlignment="Center"/>
+
+        <!-- Content -->
+        <StackPanel Grid.Row="1" 
+                    Margin="20"
+                    VerticalAlignment="Center">
+            <TextBlock Text="{Binding StatusMessage}" 
+                       FontSize="16"
+                       HorizontalAlignment="Center"
+                       TextWrapping="Wrap"
+                       TextAlignment="Center"/>
+            <ProgressBar IsIndeterminate="{Binding IsReading}" 
+                         Height="2" 
+                         Margin="0,20"
+                         Background="Transparent"
+                         Foreground="#2196F3"
+                         Visibility="{Binding IsReading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+        </StackPanel>
+
+        <!-- Footer -->
+        <Button Grid.Row="2"
+                Command="{Binding CancelCommand}"
+                Content="Hủy"
+                Width="100"
+                Height="30"
+                Margin="20"
+                Background="#F44336"
+                Foreground="White"
+                BorderThickness="0"
+                Cursor="Hand">
+            <Button.Template>
+                <ControlTemplate TargetType="Button">
+                    <Border Background="{TemplateBinding Background}" 
+                            CornerRadius="4">
+                        <ContentPresenter HorizontalAlignment="Center" 
+                                        VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Button.Template>
+        </Button>
+    </Grid>
+</Window>
