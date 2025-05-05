@@ -8,9 +8,9 @@ namespace SmartStorePOS.Services
     /// <summary>
     /// Triển khai IOrderImageProcessor
     /// </summary>
-    public class OrderImageProcessor : IOrderImageProcessor
+    public class OrderImageProcessor(IApiService apiService) : IOrderImageProcessor
     {
-        private readonly IApiService _apiService;
+        private readonly IApiService _apiService = apiService;
 
         // URL của các hình ảnh
         private string _imageUrl1;
@@ -20,11 +20,6 @@ namespace SmartStorePOS.Services
         public string ImageUrl1 => _imageUrl1;
         public string ImageUrl2 => _imageUrl2;
         public string ImageUrl3 => _imageUrl3;
-
-        public OrderImageProcessor(IApiService apiService)
-        {
-            _apiService = apiService;
-        }
 
         /// <summary>
         /// Xử lý hình ảnh và tạo đơn hàng
@@ -50,18 +45,21 @@ namespace SmartStorePOS.Services
                     {
                         var uploadResponse1 = await _apiService.UploadImageAsync(image1Path);
                         _imageUrl1 = uploadResponse1.image_url;
+                        ImageHelper.DeleteTempFile(image1Path); // Xóa file tạm sau khi upload
                     }
 
                     if (image2Path != null)
                     {
                         var uploadResponse2 = await _apiService.UploadImageAsync(image2Path);
                         _imageUrl2 = uploadResponse2.image_url;
+                        ImageHelper.DeleteTempFile(image2Path); // Xóa file tạm sau khi upload
                     }
 
                     if (image3Path != null)
                     {
                         var uploadResponse3 = await _apiService.UploadImageAsync(image3Path);
                         _imageUrl3 = uploadResponse3.image_url;
+                        ImageHelper.DeleteTempFile(image3Path); // Xóa file tạm sau khi upload
                     }
                 }
                 else
@@ -85,32 +83,6 @@ namespace SmartStorePOS.Services
             catch (Exception ex)
             {
                 throw new Exception($"Lỗi khi xử lý hình ảnh: {ex.Message}", ex);
-            }
-        }
-
-        /// <summary>
-        /// Cập nhật đơn hàng khi có thay đổi
-        /// </summary>
-        public async Task<Order> UpdateOrder(string orderId, List<OrderItem> orderItems)
-        {
-            try
-            {
-                var updateOrderRequest = new UpdateOrderWrongRequest
-                {
-                    OldOrderId = orderId,
-                    Items = [.. orderItems.Select(x => new UpdateOrderWrongItems
-                    {
-                        ProductId = x.ProductId,
-                        Count = x.Count,
-                    })]
-                };
-
-                var updatedOrder = await _apiService.UpdateOrderWrongAsync(updateOrderRequest);
-                return updatedOrder;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Lỗi khi cập nhật đơn hàng: {ex.Message}", ex);
             }
         }
     }

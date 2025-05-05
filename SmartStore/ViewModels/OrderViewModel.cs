@@ -41,15 +41,21 @@ namespace SmartStorePOS.ViewModels
         private string _orderText = "Xử lý đơn hàng";
         private bool _isShowOrderButton = true;
         private bool _isShowCancelButton = false;
+        private bool _isCaptured = false;
 
         private string _imageUrl1;
         private string _imageUrl2;
         private string _imageUrl3;
         private bool _isImageUploaded = false;
+        private string _boxedImage;
 
         private Order _order;
-        private Order _lastOrder;
         private ObservableCollection<OrderItem> _items;
+
+        private BitmapSource _streamImage1;
+        private BitmapSource _streamImage2;
+        private BitmapSource _streamImage3;
+
         private BitmapSource _capturedImage1;
         private BitmapSource _capturedImage2;
         private BitmapSource _capturedImage3;
@@ -66,6 +72,24 @@ namespace SmartStorePOS.ViewModels
         {
             get => _qrCodeUrl;
             set => SetProperty(ref _qrCodeUrl, value);
+        }
+
+        public BitmapSource StreamImage1
+        {
+            get => _streamImage1;
+            set => SetProperty(ref _streamImage1, value);
+        }
+
+        public BitmapSource StreamImage2
+        {
+            get => _streamImage2;
+            set => SetProperty(ref _streamImage2, value);
+        }
+
+        public BitmapSource StreamImage3
+        {
+            get => _streamImage3;
+            set => SetProperty(ref _streamImage3, value);
         }
 
         public BitmapSource CapturedImage1
@@ -170,12 +194,17 @@ namespace SmartStorePOS.ViewModels
             set => SetProperty(ref _isImageUploaded, value);
         }
 
-        public Order LastOrder
+        public string BoxedImage
         {
-            get => _lastOrder;
-            set => SetProperty(ref _lastOrder, value);
+            get => _boxedImage;
+            set => SetProperty(ref _boxedImage, value);
         }
 
+        public bool IsCaptured
+        {
+            get => _isCaptured;
+            set => SetProperty(ref _isCaptured, value);
+        }
         #endregion
 
         #region Commands
@@ -273,9 +302,9 @@ namespace SmartStorePOS.ViewModels
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
-                CapturedImage1 = CameraService.Image1;
-                CapturedImage2 = CameraService.Image2;
-                CapturedImage3 = CameraService.Image3;
+                StreamImage1 = CameraService.Image1;
+                StreamImage2 = CameraService.Image2;
+                StreamImage3 = CameraService.Image3;
             });
         }
 
@@ -355,13 +384,12 @@ namespace SmartStorePOS.ViewModels
                     CapturedImage2,
                     CapturedImage3);
 
-                // Lưu lại đơn hàng
-                LastOrder = order;
 
                 // Cập nhật URL hình ảnh từ processor
                 ImageUrl1 = _orderImageProcessor.ImageUrl1 ?? order.Image1;
                 ImageUrl2 = _orderImageProcessor.ImageUrl2 ?? order.Image2;
                 ImageUrl3 = _orderImageProcessor.ImageUrl3 ?? order.Image3;
+                BoxedImage = order.BoxedImage;
                 IsImageUploaded = true;
 
                 // Cập nhật danh sách mặt hàng
@@ -403,70 +431,13 @@ namespace SmartStorePOS.ViewModels
         }
 
         /// <summary>
-        /// Cập nhật đơn hàng khi có thay đổi
-        /// </summary>
-        public async Task UpdateOrder()
-        {
-            try
-            {
-                if (LastOrder == null)
-                    return;
-
-                var updatedOrder = await _orderImageProcessor.UpdateOrder(
-                    LastOrder.OrderId,
-                    Items.ToList());
-
-                // Cập nhật đơn hàng
-                LastOrder = updatedOrder;
-
-                // Cập nhật danh sách mặt hàng
-                Items.Clear();
-                if (updatedOrder != null && updatedOrder.Items != null)
-                {
-                    foreach (var item in updatedOrder.Items)
-                    {
-                        Items.Add(new OrderItem
-                        {
-                            CategoryId = item.CategoryId,
-                            CategoryName = item.CategoryName,
-                            ProductId = item.ProductId,
-                            ProductName = item.ProductName,
-                            UnitPrice = item.UnitPrice,
-                            Count = item.Count,
-                            Total = item.Total
-                        });
-                    }
-                }
-
-                // Cập nhật tổng tiền
-                Total = updatedOrder.Total;
-                OnPropertyChanged(nameof(Total));
-
-                // Cập nhật đơn hàng hiện tại
-                if (Order != null)
-                {
-                    Order.Items = new System.Collections.Generic.List<OrderItem>(Items);
-                    Order.Total = Total;
-                }
-            }
-            catch (Exception ex)
-            {
-                ErrorMessage = $"Lỗi khi cập nhật đơn hàng: {ex.Message}";
-                throw;
-            }
-        }
-
-        /// <summary>
         /// Xử lý thanh toán đơn hàng
         /// </summary>
         public async Task ProcessPayment(PaymentMethodWindow.PaymentMethod paymentMethod)
         {
             try
             {
-                if (LastOrder == null)
-                    return;
-
-                var response = await _paymentProcessor.ProcessPayment(LastOrder, paymentMethod);
+                var response = await _paymentProcessor.ProcessPayment(Order, paymentMethod);
 
                 if (response != null && response.Status == "SUCCESS")
                 {
@@ -500,6 +471,7 @@ namespace SmartStorePOS.ViewModels
             {
                 errorMessage = "Vui lòng thêm mặt hàng vào đơn hàng.";
             }
+
             foreach (var item in Items)
             {
                 if (string.IsNullOrEmpty(item.ProductId))
@@ -519,32 +491,6 @@ namespace SmartStorePOS.ViewModels
             }
 
             return true;
-        }
-
-        /// <summary>
-        /// Kiểm tra đơn hàng đã thay đổi
-        /// </summary>
-        public bool CheckOrderChanged()
-        {
-            if (LastOrder == null || LastOrder.Items == null || Items == null)
-                return false;
-
-            // Nếu số lượng mặt hàng không giống nhau thì chắc chắn là khác
-            if (LastOrder.Items.Count != Items.Count)
-                return true;
-
-            // So sánh từng mặt hàng
-            for (int i = 0; i < LastOrder.Items.Count; i++)
-            {
-                if (LastOrder.Items[i].ProductId != Items[i].ProductId ||
-                    LastOrder.Items[i].Count != Items[i].Count ||
-                    LastOrder.Items[i].UnitPrice != Items[i].UnitPrice)
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         #endregion

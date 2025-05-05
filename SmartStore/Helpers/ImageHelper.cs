@@ -33,5 +33,23 @@
                 return null;
             }
         }
+
+        /// <summary>
+        /// Xóa file tạm
+        /// </summary>
+        public static void DeleteTempFile(string filePath)
+        {
+            try
+            {
+                if (System.IO.File.Exists(filePath))
+                {
+                    System.IO.File.Delete(filePath);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deleting temp file: {ex.Message}");
+            }
+        }
     }
 }

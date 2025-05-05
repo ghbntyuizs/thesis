@@ -42,9 +42,13 @@ namespace SmartStorePOS.ViewModels.States
         public abstract void HandleCancel(OrderViewModel context);
         public abstract string GetStateName();
 
+        /// <summary>
+        /// Reset toàn bộ trạng thái (bao gồm cả camera)
+        /// </summary>
         protected void ResetOrderViewState(OrderViewModel context)
         {
             context.IsLoading = false;
+            context.IsCaptured = false;
             context.IsCameraRunning = false;
             context.OverlayText = string.Empty;
             context.CaptureButtonText = "Bắt đầu chụp";
@@ -54,16 +58,42 @@ namespace SmartStorePOS.ViewModels.States
             context.ImageUrl1 = string.Empty;
             context.ImageUrl2 = string.Empty;
             context.ImageUrl3 = string.Empty;
-            context.CapturedImage1 = null;
-            context.CapturedImage2 = null;
-            context.CapturedImage3 = null;
+            context.StreamImage1 = null;
+            context.StreamImage2 = null;
+            context.StreamImage3 = null;
+            context.BoxedImage = null;
             context.IsImageUploaded = false;
             context.ErrorMessage = string.Empty;
             context.Items.Clear();
-            context.LastOrder = null;
             context.Order = null;
             context.Total = 0;
-            //context.OnPropertyChanged(nameof(context.Total));
+            context.InitializeOrder();
+        }
+
+        /// <summary>
+        /// Reset state đơn hàng nhưng giữ nguyên camera
+        /// </summary>
+        protected void ResetOrderStateKeepCamera(OrderViewModel context)
+        {
+            context.IsLoading = false;
+            context.IsCaptured = false;
+            context.OverlayText = string.Empty;
+            context.CaptureButtonText = "Chụp";
+            context.OrderText = "Xử lý đơn hàng";
+            context.IsShowOrderButton = false;
+            context.IsShowCancelButton = false;
+            context.ImageUrl1 = string.Empty;
+            context.ImageUrl2 = string.Empty;
+            context.ImageUrl3 = string.Empty;
+            context.CapturedImage1 = null;
+            context.CapturedImage2 = null;
+            context.CapturedImage3 = null;
+            context.BoxedImage = null;
+            context.IsImageUploaded = false;
+            context.ErrorMessage = string.Empty;
+            context.Items.Clear();
+            context.Order = null;
+            context.Total = 0;
             context.InitializeOrder();
         }
     }

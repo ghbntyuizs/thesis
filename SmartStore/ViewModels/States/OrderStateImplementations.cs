@@ -13,7 +13,7 @@ namespace SmartStorePOS.ViewModels.States
             context.IsShowCancelButton = false;
             context.CaptureButtonText = "Bắt đầu chụp";
             context.OrderText = "Xử lý đơn hàng";
-            
+
         }
 
         public override async Task HandleCaptureImages(OrderViewModel context)
@@ -34,7 +34,8 @@ namespace SmartStorePOS.ViewModels.States
 
         public override void HandleCancel(OrderViewModel context)
         {
-            // Không có gì để hủy ở trạng thái ban đầu
+            // Không tắt camera, chỉ chuyển về trạng thái CameraActive
+            ResetOrderStateKeepCamera(context);
         }
 
         public override string GetStateName() => "Initial";
@@ -67,8 +68,9 @@ namespace SmartStorePOS.ViewModels.States
 
         public override void HandleCancel(OrderViewModel context)
         {
-            context.CameraService.StopCameraStream();
-            context.StateManager.TransitionTo(new InitialState());
+            // Không tắt camera, chỉ chuyển về trạng thái CameraActive
+            ResetOrderStateKeepCamera(context);
+            context.StateManager.TransitionTo(new CameraActiveState());
         }
 
         public override string GetStateName() => "CameraInitializing";
@@ -79,22 +81,40 @@ namespace SmartStorePOS.ViewModels.States
     /// </summary>
     public class CameraActiveState : OrderStateBase
     {
-        public override void Enter(OrderViewModel context)
+        public override async void Enter(OrderViewModel context)
         {
+            ResetOrderStateKeepCamera(context);
             context.IsLoading = false;
             context.IsCameraRunning = true;
             context.CaptureButtonText = "Chụp";
             context.IsShowOrderButton = false;
-            context.IsShowCancelButton = true;
+            context.IsShowCancelButton = false;
+
+            // Đảm bảo camera đang stream khi vào trạng thái này
+            if (!context.CameraService.IsCameraRunning)
+            {
+                context.IsLoading = true;
+                context.OverlayText = "Đang khởi tạo camera ...";
+                await context.CameraService.InitializeCamera();
+                context.IsLoading = false;
+            }
         }
 
         public override async Task HandleCaptureImages(OrderViewModel context)
         {
             context.IsLoading = true;
             context.OverlayText = "Đang chụp ảnh ...";
-            await Task.Delay(1000);
+            context.IsCaptured = true;
 
-            context.CameraService.StopCameraStream();
+            // Lưu trữ hình ảnh hiện tại mà không dừng camera
+            context.CapturedImage1 = context.CameraService.Image1;
+            context.CapturedImage2 = context.CameraService.Image2;
+            context.CapturedImage3 = context.CameraService.Image3;
+
+            await Task.Delay(500);
+            context.IsLoading = false;
+
+            // Không dừng camera stream, vẫn giữ camera hoạt động
             context.StateManager.TransitionTo(new ImageCapturedState());
         }
 
@@ -106,8 +126,9 @@ namespace SmartStorePOS.ViewModels.States
 
         public override void HandleCancel(OrderViewModel context)
         {
-            context.CameraService.StopCameraStream();
-            context.StateManager.TransitionTo(new InitialState());
+            // Giữ nguyên camera, chỉ chuyển về trạng thái CameraActive và reset state
+            ResetOrderStateKeepCamera(context);
+            context.StateManager.TransitionTo(new CameraActiveState());
         }
 
         public override string GetStateName() => "CameraActive";
@@ -118,14 +139,15 @@ namespace SmartStorePOS.ViewModels.States
     /// </summary>
     public class ImageCapturedState : OrderStateBase
     {
-        public override void Enter(OrderViewModel context)
+        public override async void Enter(OrderViewModel context)
         {
             context.IsLoading = false;
-            context.IsCameraRunning = false;
+            // Không đặt IsCameraRunning = false vì camera vẫn đang chạy
             context.CaptureButtonText = "Chụp lại";
             context.OrderText = "Xử lý đơn hàng";
-            context.IsShowOrderButton = true;
+            context.IsShowOrderButton = false;
             context.IsShowCancelButton = true;
+            await HandleProcessOrder(context);
         }
 
         public override async Task HandleCaptureImages(OrderViewModel context)
@@ -140,8 +162,24 @@ namespace SmartStorePOS.ViewModels.States
                 context.Items.Clear();
             }
 
-            context.StateManager.TransitionTo(new CameraInitializingState());
-            await context.CameraService.InitializeCamera();
+            // Reset các state liên quan đến đơn hàng và BoxedImage
+            context.BoxedImage = null;
+            context.IsImageUploaded = false;
+            context.Order = null;
+            context.Total = 0;
+            context.InitializeOrder();
+
+            // Nếu camera đang hoạt động, chỉ cần chuyển về trạng thái CameraActive
+            if (context.CameraService.IsCameraRunning)
+            {
+                context.StateManager.TransitionTo(new CameraActiveState());
+            }
+            else
+            {
+                // Nếu camera chưa khởi tạo, cần khởi tạo lại
+                context.StateManager.TransitionTo(new CameraInitializingState());
+                await context.CameraService.InitializeCamera();
+            }
         }
 
         public override async Task HandleProcessOrder(OrderViewModel context)
@@ -149,8 +187,9 @@ namespace SmartStorePOS.ViewModels.States
             context.IsLoading = true;
             context.ErrorMessage = string.Empty;
             context.OverlayText = "Đang xử lý đơn hàng ...";
+            context.IsShowCancelButton = false;
 
-            await Task.Delay(2000);
+            await Task.Delay(1000);
             await context.HandleLoadOrderByImage();
 
             context.StateManager.TransitionTo(new OrderCreatedState());
@@ -158,8 +197,9 @@ namespace SmartStorePOS.ViewModels.States
 
         public override void HandleCancel(OrderViewModel context)
         {
-            context.CameraService.StopCameraStream();
-            context.StateManager.TransitionTo(new InitialState());
+            // Giữ nguyên camera, reset các state và về trạng thái CameraActive
+            ResetOrderStateKeepCamera(context);
+            context.StateManager.TransitionTo(new CameraActiveState());
         }
 
         public override string GetStateName() => "ImageCaptured";
@@ -175,8 +215,16 @@ namespace SmartStorePOS.ViewModels.States
             context.IsLoading = false;
             context.CaptureButtonText = "Chụp lại";
             context.OrderText = "Thanh toán";
-            context.IsShowOrderButton = true;
-            context.IsShowCancelButton = true;
+            context.IsShowOrderButton = context.Items.Count > 0;
+            if (context.Items.Count == 0)
+            {
+                context.DialogService.ShowInfoDialog("Thông báo", "Không tìm thấy mặt hàng nào trong ảnh. Vui lòng chụp lại.");
+                context.StateManager.TransitionTo(new CameraActiveState());
+            }
+            else
+            {
+                context.IsShowCancelButton = true;
+            }
         }
 
         public override async Task HandleCaptureImages(OrderViewModel context)
@@ -190,24 +238,30 @@ namespace SmartStorePOS.ViewModels.States
                 context.Items.Clear();
             }
 
-            context.StateManager.TransitionTo(new CameraInitializingState());
-            await context.CameraService.InitializeCamera();
+            // Reset các state liên quan đến đơn hàng và BoxedImage
+            context.BoxedImage = null;
+            context.IsImageUploaded = false;
+            context.Order = null;
+            context.Total = 0;
+            context.InitializeOrder();
+
+            // Nếu camera đang hoạt động, chỉ cần chuyển về trạng thái CameraActive
+            if (context.CameraService.IsCameraRunning)
+            {
+                context.StateManager.TransitionTo(new CameraActiveState());
+            }
+            else
+            {
+                // Nếu camera chưa khởi tạo, cần khởi tạo lại
+                context.StateManager.TransitionTo(new CameraInitializingState());
+                await context.CameraService.InitializeCamera();
+            }
         }
 
         public override async Task HandleProcessOrder(OrderViewModel context)
         {
             if (!context.ValidateOrder())
                 return;
-
-            var hasChanged = context.CheckOrderChanged();
-            if (hasChanged)
-            {
-                var dialogResult = context.DialogService.ShowYesNoDialog("Xác nhận", "Đơn hàng đã thay đổi. Bạn có muốn tiếp tục không?");
-                if (dialogResult == false)
-                    return;
-
-                await context.UpdateOrder();
-            }
 
             context.OverlayText = "Đang thực hiện thanh toán ...";
             context.StateManager.TransitionTo(new PaymentProcessingState());
@@ -232,8 +286,9 @@ namespace SmartStorePOS.ViewModels.States
                     return;
             }
 
-            context.CameraService.StopCameraStream();
-            context.StateManager.TransitionTo(new InitialState());
+            // Giữ nguyên camera, chỉ reset các state và chuyển về CameraActive
+            ResetOrderStateKeepCamera(context);
+            context.StateManager.TransitionTo(new CameraActiveState());
         }
 
         public override string GetStateName() => "OrderCreated";
@@ -283,7 +338,8 @@ namespace SmartStorePOS.ViewModels.States
             context.DialogService.ShowInfoDialog("Thông báo", $"Đã thanh toán thành công số tiền {context.Total:N0} VNĐ");
 
             // Reset lại trạng thái về ban đầu
-            ResetOrderViewState(context);
+            //ResetOrderViewState(context);
+            ResetOrderStateKeepCamera(context);
             context.StateManager.TransitionTo(new InitialState());
         }
 

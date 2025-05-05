@@ -93,12 +93,12 @@
                     <!-- Yes/No Dialog Buttons -->
                     <StackPanel Orientation="Horizontal" 
                                 Visibility="{Binding DialogType, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter={x:Static vm:DialogType.YesNo}}">
-                        <Button Content="Yes" 
+                        <Button Content="Có" 
                                 Command="{Binding YesCommand}" 
                                 Style="{StaticResource PrimaryButton}" 
                                 Width="100" 
                                 Margin="0,0,10,0"/>
-                        <Button Content="No" 
+                        <Button Content="Không" 
                                 Command="{Binding NoCommand}" 
                                 Style="{StaticResource SecondaryButton}" 
                                 Width="100"/>

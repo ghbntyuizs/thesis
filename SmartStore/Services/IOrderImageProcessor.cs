@@ -31,13 +31,5 @@ namespace SmartStorePOS.Services
         /// Lấy URL của hình ảnh 3
         /// </summary>
         string ImageUrl3 { get; }
-
-        /// <summary>
-        /// Cập nhật đơn hàng khi có thay đổi
-        /// </summary>
-        /// <param name="orderId">ID của đơn hàng</param>
-        /// <param name="orderItems">Danh sách các mặt hàng mới</param>
-        /// <returns>Đơn hàng đã cập nhật</returns>
-        Task<Order> UpdateOrder(string orderId, System.Collections.Generic.List<OrderItem> orderItems);
     }
 }

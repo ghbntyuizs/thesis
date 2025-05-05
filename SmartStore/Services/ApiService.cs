@@ -15,7 +15,6 @@ namespace SmartStorePOS.Services
         Task<UploadResponse> UploadImageAsync(string filePath);
         Task<Order> CreateOrderAsync(CreateOrderRequest request);
         Task<PaymentResponse> CreatePaymentAsync(CreatePaymentRequest request);
-        Task<Order> UpdateOrderWrongAsync(UpdateOrderWrongRequest request);
         string GenerateQrCodeUrl(string orderId);
         void SetToken(string token);
     }
@@ -164,31 +163,6 @@ namespace SmartStorePOS.Services
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
             return paymentResponse;
-        }
-
-        /// <summary>
-        /// Cập nhật lại Order bị sai
-        /// </summary>
-        public async Task<Order> UpdateOrderWrongAsync(UpdateOrderWrongRequest request)
-        {
-            if (string.IsNullOrEmpty(_accessToken))
-                throw new InvalidOperationException("User not authenticated");
-
-            var content = new StringContent(
-                JsonSerializer.Serialize(request),
-                Encoding.UTF8,
-                "application/json");
-
-            var apiUrl = "api/order/live";
-            var response = await _httpClient.PostAsync(apiUrl, content);
-            response.EnsureSuccessStatusCode();
-
-            var responseString = await response.Content.ReadAsStringAsync();
-            var orderResponse = JsonSerializer.Deserialize<Order>(
-                responseString,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-            return orderResponse;
         }
     }
 }

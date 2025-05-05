@@ -11,10 +11,11 @@
                 <ResourceDictionary Source="Styles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
-            <!-- BooleanToVisibilityConverter -->
+            <!-- Converters -->
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
-            
             <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter" />
+            <converters:Base64ToImageConverter x:Key="Base64ToImageConverter" />
+            <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
             
             <!-- Định nghĩa DataTemplate cho LoginViewModel -->
             <DataTemplate DataType="{x:Type viewModels:LoginViewModel}">
