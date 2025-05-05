@@ -31,15 +31,11 @@ namespace SmartStorePOS.ViewModels
         private string _orderText = "Xử lý đơn hàng";
         private bool _isShowOrderButton = true;
         private bool _isShowCancelButton = false;
-        private bool _isReadOnly = true;
-        private bool _isAllowAddNewRow = false;
+
         private string _imageUrl1;
         private string _imageUrl2;
         private string _imageUrl3;
         private bool _isImageUploaded = false;
-        private const int _pageSize = int.MaxValue;
-        private const int _pageNumber = 1;
-        private bool _isLoadingProducts;
 
         private Order _order;
         private Order _lastOrder;
@@ -53,13 +49,6 @@ namespace SmartStorePOS.ViewModels
         private VideoCapture[] _videoCaptureArray = new VideoCapture[3];
         private Mat[] _frameArray = new Mat[3];
         private bool[] _cameraInitialized = new bool[3];
-        private ObservableCollection<ProductDTO> _productList;
-
-        public ObservableCollection<ProductDTO> ProductList
-        {
-            get => _productList;
-            set => SetProperty(ref _productList, value);
-        }
 
         public Order Order
         {
@@ -171,37 +160,18 @@ namespace SmartStorePOS.ViewModels
             set => SetProperty(ref _isImageUploaded, value);
         }
 
-        public bool IsReadOnly
-        {
-            get => _isReadOnly;
-            set
-            {
-                SetProperty(ref _isReadOnly, value);
-            }
-        }
-
-        public bool IsAllowAddNewRow
-        {
-            get => _isAllowAddNewRow;
-            set
-            {
-                SetProperty(ref _isAllowAddNewRow, value);
-            }
-        }
-
         public Order LastOrder
         {
             get => _lastOrder;
             set => SetProperty(ref _lastOrder, value);
         }
 
-        public ICommand AddNewRowCommand { get; }
-        public ICommand DeleteOrderItemCommand { get; }
         public ICommand NewOrderCommand { get; }
         public ICommand LogoutCommand { get; }
         public ICommand CaptureImagesCommand { get; }
         public ICommand ProcessOrderCommand { get; }
         public ICommand CancelCommand { get; }
+
         public ICommand HelpCommand { get; }
         public ICommand CopyImageUrl1Command { get; }
         public ICommand CopyImageUrl2Command { get; }
@@ -219,11 +189,8 @@ namespace SmartStorePOS.ViewModels
 
             // Initialize collections
             Items = [];
-            ProductList = [];
 
             // Initialize commands
-            AddNewRowCommand = new RelayCommand(_ => AddNewRow());
-            DeleteOrderItemCommand = new RelayCommand(item => DeleteOrderItem(item as OrderItem));
             NewOrderCommand = new RelayCommand(_ => _navigationService.NavigateTo<MainViewModel>());
             LogoutCommand = new RelayCommand(_ => _navigationService.NavigateTo<LoginViewModel>());
             CaptureImagesCommand = new RelayCommand(async _ => await CaptureImages(), _ => !_isCameraRunning || !IsLoading);
@@ -608,7 +575,7 @@ namespace SmartStorePOS.ViewModels
             ImageUrl2 = string.Empty;
             ImageUrl3 = string.Empty;
             IsImageUploaded = false;
-            
+
             if (ConfigurationManager.AppSettings["Env"] != "Dev")
             {
                 // Lưu hình ảnh vào thư mục tạm
@@ -635,7 +602,7 @@ namespace SmartStorePOS.ViewModels
                     ImageUrl3 = uploadResponse3.image_url;
                 }
 
-                if(ConfigurationManager.AppSettings["SingleCam"] == "true")
+                if (ConfigurationManager.AppSettings["SingleCam"] == "true")
                 {
                     ImageUrl2 = ImageUrl3 = ImageUrl1;
                 }
@@ -727,8 +694,6 @@ namespace SmartStorePOS.ViewModels
                     CaptureButtonText = "Chụp lại";
                     OrderText = "Thanh toán";
                     IsShowOrderButton = true;
-                    IsReadOnly = false;
-                    IsAllowAddNewRow = true;
                 }
                 else
                 {
@@ -770,9 +735,6 @@ namespace SmartStorePOS.ViewModels
                                 });
                             }
                         }
-
-                        IsReadOnly = true;
-                        IsAllowAddNewRow = false;
                     }
 
                     OverlayText = "Đang thực hiện thanh toán ...";
@@ -839,11 +801,11 @@ namespace SmartStorePOS.ViewModels
             //_navigationService.NavigateTo<MainViewModel>();
         }
 
+        /// <summary>
+        /// Reset all properties to their initial state
+        /// </summary>
         public void InitFormState()
         {
-            // Reset all properties to their initial state
-            IsReadOnly = true;
-            IsAllowAddNewRow = false;
             IsLoading = false;
             IsCameraRunning = false;
             OverlayText = string.Empty;
@@ -872,22 +834,6 @@ namespace SmartStorePOS.ViewModels
             Total = 0;
             OnPropertyChanged(nameof(Total));
             InitializeOrder();
-        }
-
-        public void OnProductSelected(ProductDTO selectedProduct, OrderItem orderItem)
-        {
-
-            if (selectedProduct != null && orderItem != null)
-            {
-                orderItem.ProductId = selectedProduct.ProductId?.ToString();
-                orderItem.ProductName = selectedProduct.ProductName;
-                orderItem.CategoryId = selectedProduct.CategoryId?.ToString();
-                orderItem.CategoryName = selectedProduct.CategoryName;
-                orderItem.UnitPrice = (decimal)(selectedProduct.BasePrice ?? 0);
-                orderItem.Count = 1;
-                orderItem.Total = orderItem.UnitPrice * orderItem.Count;
-                UpdateTotal();
-            }
         }
 
         /// <summary>
@@ -947,15 +893,6 @@ namespace SmartStorePOS.ViewModels
             return false;
         }
 
-        public void CalculateTotalPrice()
-        {
-            if (Items != null && Items.Count > 0)
-            {
-                Total = Items.Sum(x => x.Total);
-                OnPropertyChanged(nameof(Total));
-            }
-        }
-
         private async void InitializeWebSocket()
         {
             try
@@ -973,69 +910,6 @@ namespace SmartStorePOS.ViewModels
         {
             // TODO: Xử lý message từ WebSocket ở đây
             Console.WriteLine($"Nhận message từ WebSocket: {message}");
-        }
-
-        public async Task LoadProducts(string searchText = null)
-        {
-            if (_isLoadingProducts) return;
-
-            try
-            {
-                _isLoadingProducts = true;
-
-                var request = new GetProductRequest
-                {
-                    pageNumber = _pageNumber,
-                    pageSize = _pageSize,
-                };
-
-                var result = await _apiService.GetProductsAsync(request);
-                if (result?.Items != null)
-                {
-                    foreach (var product in result.Items)
-                    {
-                        ProductList.Add(product);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                ErrorMessage = $"Lỗi tải danh sách sản phẩm: {ex.Message}";
-            }
-            finally
-            {
-                _isLoadingProducts = false;
-            }
-        }
-
-        private void AddNewRow()
-        {
-            var newItem = new OrderItem
-            {
-                Count = 1
-            };
-            Items.Add(newItem);
-        }
-
-        private void DeleteOrderItem(OrderItem item)
-        {
-            if (item != null)
-            {
-                Items.Remove(item);
-                UpdateTotal();
-            }
-        }
-
-        private void UpdateTotal()
-        {
-            Total = Items.Sum(x => x.Total);
-            OnPropertyChanged(nameof(Total));
-
-            if (Order != null)
-            {
-                Order.Items = new List<OrderItem>(Items);
-                Order.Total = Total;
-            }
         }
 
         /// <summary>
