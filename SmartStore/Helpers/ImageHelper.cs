@@ -2,6 +2,11 @@
 {
     public class ImageHelper
     {
+        /// <summary>
+        /// Lưu ảnh vào thư mục temp
+        /// </summary>
+        /// <param name="image"></param>
+        /// <returns></returns>
         public static string SaveImageToTempFile(System.Windows.Media.Imaging.BitmapSource image)
         {
             try

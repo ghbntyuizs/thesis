@@ -15,8 +15,17 @@ namespace SmartStorePOS.Helpers
             _canExecute = canExecute;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="parameter"></param>
+        /// <returns></returns>
         public bool CanExecute(object parameter) => _canExecute == null || _canExecute(parameter);
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="parameter"></param>
         public void Execute(object parameter) => _execute(parameter);
 
         public event EventHandler CanExecuteChanged

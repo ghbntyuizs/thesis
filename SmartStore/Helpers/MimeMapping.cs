@@ -2,6 +2,9 @@
 
 namespace SmartStorePOS.Helpers
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public static class MimeMapping
     {
         private static readonly Dictionary<string, string> MimeTypes = new()

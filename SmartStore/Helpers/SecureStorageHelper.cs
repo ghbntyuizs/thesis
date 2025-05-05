@@ -11,6 +11,9 @@ namespace SmartStorePOS.Helpers
         public string? DeviceId { get; set; }
     }
 
+    /// <summary>
+    /// Lớp này giúp lưu trữ và truy xuất token một cách an toàn
+    /// </summary>
     public static class SecureStorageHelper
     {
         private static readonly string FilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "auth_token.dat");

@@ -16,7 +16,6 @@ namespace SmartStorePOS.Services
         Task<Order> CreateOrderAsync(CreateOrderRequest request);
         Task<PaymentResponse> CreatePaymentAsync(CreatePaymentRequest request);
         Task<Order> UpdateOrderWrongAsync(UpdateOrderWrongRequest request);
-        Task<GetProductResponse> GetProductsAsync(GetProductRequest request);
         string GenerateQrCodeUrl(string orderId);
         void SetToken(string token);
     }
@@ -190,31 +189,6 @@ namespace SmartStorePOS.Services
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
             return orderResponse;
-        }
-
-        public async Task<GetProductResponse> GetProductsAsync(GetProductRequest request)
-        {
-            var content = new StringContent(
-                JsonSerializer.Serialize(request),
-                Encoding.UTF8,
-                "application/json");
-
-            var response = await _httpClient.PostAsync("/api/product/get", content);
-            response.EnsureSuccessStatusCode();
-
-            var responseString = await response.Content.ReadAsStringAsync();
-            var products = JsonSerializer.Deserialize<GetProductResponse>(responseString,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-            if (products != null && products.Items.Count > 0)
-            {
-                products.Items.ForEach(x =>
-                {
-                    x.GetBasePriceByStoreId();
-                });
-            }
-
-            return products;
         }
     }
 }
