@@ -438,20 +438,22 @@ namespace SmartStorePOS.ViewModels
             try
             {
                 var response = await _paymentProcessor.ProcessPayment(Order, paymentMethod);
-
-                if (response != null && response.Status == "SUCCESS")
+                if (response != null)
                 {
-                    StateManager.TransitionTo(new PaymentCompletedState());
-                }
-                else if (response != null && response.Status == "PENDING")
-                {
-                    // Đối với thanh toán QR Code, có thể đang chờ xác nhận
-                    // Có thể sử dụng WebSocket để nhận thông báo khi thanh toán hoàn tất
-                }
-                else
-                {
-                    DialogService.ShowInfoDialog("Thông báo", "Thanh toán không thành công.");
-                    StateManager.TransitionTo(new OrderCreatedState());
+                    if (response.Status == "SUCCESS")
+                    {
+                        StateManager.TransitionTo(new PaymentCompletedState());
+                    }
+                    else if (response.Status == "PENDING")
+                    {
+                        // Đối với thanh toán QR Code, có thể đang chờ xác nhận
+                        // Có thể sử dụng WebSocket để nhận thông báo khi thanh toán hoàn tất
+                    }
+                    else
+                    {
+                        DialogService.ShowInfoDialog("Thông báo", "Thanh toán không thành công.");
+                        StateManager.TransitionTo(new OrderCreatedState());
+                    }
                 }
             }
             catch (Exception ex)

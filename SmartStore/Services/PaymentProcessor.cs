@@ -62,16 +62,16 @@ namespace SmartStorePOS.Services
                         break;
                 }
 
-                if (response != null && response.Status == "SUCCESS")
-                {
-                    // Gọi API để cập nhật trạng thái thanh toán của đơn hàng
-                    await _apiService.CreatePaymentAsync(new CreatePaymentRequest
-                    {
-                        //OrderId = order.OrderId,
-                        //Amount = order.Total,
-                        //PaymentMethod = response.PaymentMethod
-                    });
-                }
+                //if (response != null && response.Status == "SUCCESS")
+                //{
+                //    // Gọi API để cập nhật trạng thái thanh toán của đơn hàng
+                //    await _apiService.CreatePaymentAsync(new CreatePaymentRequest
+                //    {
+                //        //OrderId = order.OrderId,
+                //        //Amount = order.Total,
+                //        //PaymentMethod = response.PaymentMethod
+                //    });
+                //}
 
                 return response;
             }

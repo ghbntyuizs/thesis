@@ -260,7 +260,7 @@ namespace SmartStorePOS.ViewModels.States
 
         public override async Task HandleProcessOrder(OrderViewModel context)
         {
-            if (!context.ValidateOrder())
+            if (!context.ValidateOrder()) 
                 return;
 
             context.OverlayText = "Đang thực hiện thanh toán ...";
@@ -340,7 +340,8 @@ namespace SmartStorePOS.ViewModels.States
             // Reset lại trạng thái về ban đầu
             //ResetOrderViewState(context);
             ResetOrderStateKeepCamera(context);
-            context.StateManager.TransitionTo(new InitialState());
+            //context.StateManager.TransitionTo(new InitialState());
+            context.StateManager.TransitionTo(new CameraActiveState());
         }
 
         public override Task HandleCaptureImages(OrderViewModel context)
