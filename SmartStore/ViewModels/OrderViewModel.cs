@@ -354,7 +354,7 @@ namespace SmartStorePOS.ViewModels
                 _timer.Interval = TimeSpan.FromMilliseconds(33); // Giá trị mặc định ban đầu ~30 FPS
 
                 // Heavy operations can be done in background
-                Task.Run(() =>
+                Task.Run(async () =>
                 {
                     try
                     {
@@ -369,9 +369,8 @@ namespace SmartStorePOS.ViewModels
                         var deviceId3 = ConfigurationManager.AppSettings["Camera3DeviceId"];
 
                         // Khởi tạo từng camera
-                        InitializeSingleCamera(0, cameraIp1, deviceId1);
-                        InitializeSingleCamera(1, cameraIp2, deviceId2);
-                        InitializeSingleCamera(2, cameraIp3, deviceId3);
+                        await RunCameraInitialization(cameraIp1, cameraIp2, cameraIp3, deviceId1, deviceId2, deviceId3);
+
 
                         // Kiểm tra xem có camera nào được khởi tạo hay không
                         if (!_cameraInitialized[0] && !_cameraInitialized[1] && !_cameraInitialized[2])
@@ -414,6 +413,20 @@ namespace SmartStorePOS.ViewModels
             }
         }
 
+        public async Task RunCameraInitialization(string cameraIp1, string cameraIp2, string cameraIp3,
+                                           string deviceId1, string deviceId2, string deviceId3)
+        {
+            var cameraInitTasks = new Task[]
+            {
+                Task.Run(() => InitializeSingleCamera(0, cameraIp1, deviceId1)),
+                Task.Run(() => InitializeSingleCamera(1, cameraIp2, deviceId2)),
+                Task.Run(() => InitializeSingleCamera(2, cameraIp3, deviceId3))
+            };
+
+            // Wait for all the camera initializations to finish
+            await Task.WhenAll(cameraInitTasks);
+        }
+
         /// <summary>
         /// Khởi tạo một camera đơn
         /// </summary>
@@ -423,11 +436,21 @@ namespace SmartStorePOS.ViewModels
             {
                 if (!string.IsNullOrEmpty(deviceId))
                 {
-                    _videoCaptureArray[index] = new VideoCapture(Convert.ToInt32(deviceId));
+                    _videoCaptureArray[index] = new VideoCapture(Convert.ToInt32(deviceId), VideoCaptureAPIs.DSHOW);
+                    if (_videoCaptureArray[index].IsOpened())
+                    {
+                        _videoCaptureArray[index].Set(VideoCaptureProperties.FrameWidth, 1920);
+                        _videoCaptureArray[index].Set(VideoCaptureProperties.FrameHeight, 1080);
+                    }
                 }
                 else if (!string.IsNullOrEmpty(cameraIp))
                 {
-                    _videoCaptureArray[index] = new VideoCapture(cameraIp);
+                    _videoCaptureArray[index] = new VideoCapture(cameraIp, VideoCaptureAPIs.DSHOW);
+                    if (_videoCaptureArray[index].IsOpened())
+                    {
+                        _videoCaptureArray[index].Set(VideoCaptureProperties.FrameWidth, 1920);
+                        _videoCaptureArray[index].Set(VideoCaptureProperties.FrameHeight, 1080);
+                    }
                 }
                 else
                 {
@@ -585,7 +608,7 @@ namespace SmartStorePOS.ViewModels
             ImageUrl2 = string.Empty;
             ImageUrl3 = string.Empty;
             IsImageUploaded = false;
-
+            
             if (ConfigurationManager.AppSettings["Env"] != "Dev")
             {
                 // Lưu hình ảnh vào thư mục tạm
@@ -610,6 +633,11 @@ namespace SmartStorePOS.ViewModels
                 {
                     var uploadResponse3 = await _apiService.UploadImageAsync(image3Path);
                     ImageUrl3 = uploadResponse3.image_url;
+                }
+
+                if(ConfigurationManager.AppSettings["SingleCam"] == "true")
+                {
+                    ImageUrl2 = ImageUrl3 = ImageUrl1;
                 }
             }
             else
