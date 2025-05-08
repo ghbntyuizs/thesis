@@ -24,6 +24,8 @@ namespace SmartStorePOS.ViewModels
         public readonly ICameraService CameraService;
         private readonly IOrderImageProcessor _orderImageProcessor;
         private readonly IPaymentProcessor _paymentProcessor;
+        private readonly ICardReaderService _cardReaderService;
+        private readonly IApiService _apiService;
 
         // Quản lý state
         public readonly OrderStateManager StateManager;
@@ -42,6 +44,9 @@ namespace SmartStorePOS.ViewModels
         private bool _isShowOrderButton = true;
         private bool _isShowCancelButton = false;
         private bool _isCaptured = false;
+        private bool _isCardReaderActive = false;
+        private bool _isOrderProcessed = false;
+        private string _cardReaderStatus = "Đang chờ quét thẻ...";
 
         private string _imageUrl1;
         private string _imageUrl2;
@@ -205,6 +210,24 @@ namespace SmartStorePOS.ViewModels
             get => _isCaptured;
             set => SetProperty(ref _isCaptured, value);
         }
+
+        public bool IsCardReaderActive
+        {
+            get => _isCardReaderActive;
+            set => SetProperty(ref _isCardReaderActive, value);
+        }
+
+        public bool IsOrderProcessed
+        {
+            get => _isOrderProcessed;
+            set => SetProperty(ref _isOrderProcessed, value);
+        }
+
+        public string CardReaderStatus
+        {
+            get => _cardReaderStatus;
+            set => SetProperty(ref _cardReaderStatus, value);
+        }
         #endregion
 
         #region Commands
@@ -212,13 +235,18 @@ namespace SmartStorePOS.ViewModels
         public ICommand NewOrderCommand { get; }
         public ICommand LogoutCommand { get; }
         public ICommand CaptureImagesCommand { get; }
-        public ICommand ProcessOrderCommand { get; }
+        //public ICommand ProcessOrderCommand { get; }
         public ICommand CancelCommand { get; }
 
         public ICommand HelpCommand { get; }
         public ICommand CopyImageUrl1Command { get; }
         public ICommand CopyImageUrl2Command { get; }
         public ICommand CopyImageUrl3Command { get; }
+
+        // Command thanh toán
+        public ICommand QRCodePaymentCommand { get; }
+        //public ICommand MembershipCardPaymentCommand { get; }
+        //public ICommand PaymentCommand { get; }
 
         #endregion
 
@@ -231,7 +259,9 @@ namespace SmartStorePOS.ViewModels
             IWebSocketService webSocketService,
             ICameraService cameraService,
             IOrderImageProcessor orderImageProcessor,
-            IPaymentProcessor paymentProcessor)
+            IPaymentProcessor paymentProcessor,
+            ICardReaderService cardReaderService,
+            IApiService apiService)
         {
             _navigationService = navigationService;
             DialogService = dialogService;
@@ -239,9 +269,15 @@ namespace SmartStorePOS.ViewModels
             CameraService = cameraService;
             _orderImageProcessor = orderImageProcessor;
             _paymentProcessor = paymentProcessor;
+            _cardReaderService = cardReaderService;
+            _apiService = apiService;
 
             // Khởi tạo StateManager
             StateManager = new OrderStateManager(this);
+
+            // Đăng ký sự kiện đọc thẻ
+            _cardReaderService.CardScanned += OnCardScanned;
+            _cardReaderService.CardReadError += OnCardReadError;
 
             // Đăng ký các sự kiện camera
             CameraService.CameraInitialized += OnCameraInitialized;
@@ -258,7 +294,7 @@ namespace SmartStorePOS.ViewModels
             NewOrderCommand = new RelayCommand(_ => _navigationService.NavigateTo<MainViewModel>());
             LogoutCommand = new RelayCommand(_ => _navigationService.NavigateTo<LoginViewModel>());
             CaptureImagesCommand = new RelayCommand(async _ => await HandleCaptureImagesCommand());
-            ProcessOrderCommand = new RelayCommand(async _ => await HandleProcessOrderCommand());
+            //ProcessOrderCommand = new RelayCommand(async _ => await HandleProcessOrderCommand());
             CancelCommand = new RelayCommand(_ => HandleCancelCommand());
             HelpCommand = new RelayCommand(_ => DialogService.ShowInfoDialog("Thông báo", "Tính năng đang được phát triển."));
 
@@ -266,6 +302,15 @@ namespace SmartStorePOS.ViewModels
             CopyImageUrl1Command = new RelayCommand(_ => CopyTextToClipboard(ImageUrl1));
             CopyImageUrl2Command = new RelayCommand(_ => CopyTextToClipboard(ImageUrl2));
             CopyImageUrl3Command = new RelayCommand(_ => CopyTextToClipboard(ImageUrl3));
+
+            // Command thanh toán
+            //QRCodePaymentCommand = new RelayCommand(async _ => await HandleQRCodePayment());
+            QRCodePaymentCommand = new RelayCommand(_ => DialogService.ShowInfoDialog("Thông báo", "Tính năng thanh toán QR Code đang được phát triển."));
+            //MembershipCardPaymentCommand = new RelayCommand(async _ => await HandleMembershipCardPayment());
+            //PaymentCommand = new RelayCommand(async _ => await HandlePayment());
+
+            // Bắt đầu lắng nghe thẻ ngay khi khởi tạo
+            // StartAutoCardReadingAsync().ConfigureAwait(false);
 
             // Khởi tạo đơn hàng
             InitializeOrder();
@@ -310,6 +355,129 @@ namespace SmartStorePOS.ViewModels
 
         #region Command Handlers
 
+        #region Card Reader Handlers
+
+        /// <summary>
+        /// Xử lý sự kiện thẻ được quét
+        /// </summary>
+        private async void OnCardScanned(object sender, string cardNumber)
+        {
+            try
+            {
+                // Chỉ xử lý khi ở trạng thái OrderCreatedState và chưa xử lý đơn hàng
+                if (StateManager.GetCurrentState().GetStateName() == "OrderCreated" && !IsOrderProcessed)
+                {
+                    Application.Current.Dispatcher.Invoke(async () =>
+                    {
+                        CardReaderStatus = "Đã phát hiện thẻ, đang xử lý...";
+                        await HandleProcessOrderByCard(cardNumber);
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Lỗi khi xử lý thẻ: {ex.Message}";
+                CardReaderStatus = "Lỗi khi đọc thẻ";
+            }
+        }
+
+        /// <summary>
+        /// Xử lý sự kiện lỗi đọc thẻ
+        /// </summary>
+        private void OnCardReadError(object sender, Exception ex)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                ErrorMessage = $"Lỗi đọc thẻ: {ex.Message}";
+                CardReaderStatus = "Lỗi khi đọc thẻ";
+            });
+        }
+
+        /// <summary>
+        /// Xử lý đơn hàng khi thẻ được quét
+        /// </summary>
+        private async Task HandleProcessOrderByCard(string cardNumber)
+        {
+            if (!ValidateOrder())
+                return;
+
+            IsLoading = true;
+            CardReaderStatus = OverlayText = "Đang thực hiện thanh toán...";
+            StateManager.TransitionTo(new PaymentProcessingState());
+
+            var paymentResponse = await _apiService.CreatePaymentAsync(new CreatePaymentRequest
+            {
+                OrderId = Guid.Parse(Order.OrderId),
+                CardId = UuidConverter.ToUuidV4(cardNumber),
+            });
+
+            if (paymentResponse.Status != "SUCCESS")
+            {
+                IsLoading = false;
+                CardReaderStatus = OverlayText = "Đã xảy ra lỗi khi thanh toán.";
+                if (paymentResponse.Amount > paymentResponse.RemainBalance)
+                {
+                    DialogService.ShowInfoDialog("Thông báo", $"Số dư thẻ không đủ để thanh toán. Số dư hiện tại: {paymentResponse.RemainBalance:N0} VNĐ, số tiền cần thanh toán: {paymentResponse.Amount:N0} VNĐ.");
+                }
+                else
+                {
+                    DialogService.ShowInfoDialog("Thông báo", "Đã xảy ra lỗi khi thanh toán.");
+                }
+
+                StateManager.TransitionTo(new OrderCreatedState());
+                return;
+            }
+
+            CardReaderStatus = "Thanh toán thành công!";
+            DialogService.ShowInfoDialog("Thông báo", $"Đã thanh toán thành công số tiền {paymentResponse.Amount:N0} VNĐ. Số dư thẻ còn lại: {paymentResponse.RemainBalance:N0} VNĐ.");
+            StateManager.TransitionTo(new PaymentCompletedState());
+        }
+
+        /// <summary>
+        /// Xử lý khi người dùng ấn nút thanh toán
+        /// </summary>
+        //private async Task HandlePayment()
+        //{
+        //    if (!ValidateOrder())
+        //        return;
+
+        //    IsLoading = true;
+        //    OverlayText = "Đang thực hiện thanh toán...";
+        //    StateManager.TransitionTo(new PaymentProcessingState());
+
+        //    await ProcessPayment(PaymentMethodWindow.PaymentMethod.MembershipCard);
+        //}
+
+        /// <summary>
+        /// Xử lý khi người dùng ấn nút thanh toán QR Code
+        /// </summary>
+        //private async Task HandleQRCodePayment()
+        //{
+        //    if (!ValidateOrder())
+        //        return;
+
+        //    IsLoading = true;
+        //    OverlayText = "Đang thực hiện thanh toán QR Code...";
+        //    StateManager.TransitionTo(new PaymentProcessingState());
+
+        //    await ProcessPayment(PaymentMethodWindow.PaymentMethod.QRCode);
+        //}
+
+        /// <summary>
+        /// Xử lý khi người dùng ấn nút thanh toán thẻ thành viên
+        /// </summary>
+        //private async Task HandleMembershipCardPayment()
+        //{
+        //    if (!ValidateOrder())
+        //        return;
+
+        //    IsLoading = true;
+        //    OverlayText = "Đang thực hiện thanh toán qua thẻ thành viên...";
+        //    StateManager.TransitionTo(new PaymentProcessingState());
+
+        //    await ProcessPayment(PaymentMethodWindow.PaymentMethod.MembershipCard);
+        //}
+
         /// <summary>
         /// Xử lý khi người dùng ấn nút chụp ảnh
         /// </summary>
@@ -321,10 +489,10 @@ namespace SmartStorePOS.ViewModels
         /// <summary>
         /// Xử lý khi người dùng ấn nút xử lý đơn hàng
         /// </summary>
-        private async Task HandleProcessOrderCommand()
-        {
-            await StateManager.GetCurrentState().HandleProcessOrder(this);
-        }
+        //private async Task HandleProcessOrderCommand()
+        //{
+        //    await StateManager.GetCurrentState().HandleProcessOrder(this);
+        //}
 
         /// <summary>
         /// Xử lý khi người dùng ấn nút hủy
@@ -337,6 +505,14 @@ namespace SmartStorePOS.ViewModels
         #endregion
 
         #region Helper Methods
+
+        /// <summary>
+        /// Hiển thị thông báo tính năng đang phát triển
+        /// </summary>
+        //private void ShowFeatureInDevelopmentMessage(string featureName)
+        //{
+        //    DialogService.ShowInfoDialog("Thông báo", $"Tính năng {featureName} đang được phát triển.");
+        //}
 
         /// <summary>
         /// Copy URL vào clipboard
@@ -383,7 +559,6 @@ namespace SmartStorePOS.ViewModels
                     CapturedImage1,
                     CapturedImage2,
                     CapturedImage3);
-
 
                 // Cập nhật URL hình ảnh từ processor
                 ImageUrl1 = _orderImageProcessor.ImageUrl1 ?? order.Image1;
@@ -449,7 +624,7 @@ namespace SmartStorePOS.ViewModels
                         // Đối với thanh toán QR Code, có thể đang chờ xác nhận
                         // Có thể sử dụng WebSocket để nhận thông báo khi thanh toán hoàn tất
                     }
-                    else
+                    else if (response.Status != null)
                     {
                         DialogService.ShowInfoDialog("Thông báo", "Thanh toán không thành công.");
                         StateManager.TransitionTo(new OrderCreatedState());
@@ -527,6 +702,34 @@ namespace SmartStorePOS.ViewModels
         #endregion
 
         /// <summary>
+        /// Bắt đầu chế độ đọc thẻ tự động
+        /// </summary>
+        public async Task StartAutoCardReadingAsync()
+        {
+            if (!IsCardReaderActive)
+            {
+                await _cardReaderService.StartListeningAsync();
+                IsCardReaderActive = true;
+                CardReaderStatus = "Đang chờ quét thẻ...";
+            }
+        }
+
+        /// <summary>
+        /// Dừng chế độ đọc thẻ tự động
+        /// </summary>
+        public async Task StopAutoCardReadingAsync()
+        {
+            if (IsCardReaderActive)
+            {
+                await _cardReaderService.StopListeningAsync();
+                IsCardReaderActive = false;
+                CardReaderStatus = string.Empty;
+            }
+        }
+
+        #endregion
+
+        /// <summary>
         /// Giải phóng tài nguyên
         /// </summary>
         public void Dispose()
@@ -536,8 +739,19 @@ namespace SmartStorePOS.ViewModels
             CameraService.CameraError -= OnCameraError;
             CameraService.FrameUpdated -= OnCameraFrameUpdated;
 
+            // Hủy đăng ký các sự kiện đọc thẻ
+            _cardReaderService.CardScanned -= OnCardScanned;
+            _cardReaderService.CardReadError -= OnCardReadError;
+
+            // Dừng đọc thẻ
+            if (IsCardReaderActive)
+            {
+                _cardReaderService.StopListeningAsync().Wait();
+            }
+
             // Giải phóng tài nguyên camera
             CameraService.Dispose();
+            _cardReaderService.Dispose();
 
             // Ngắt kết nối WebSocket
             //_webSocketService.MessageReceived -= OnWebSocketMessageReceived;

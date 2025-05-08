@@ -210,12 +210,14 @@ namespace SmartStorePOS.ViewModels.States
     /// </summary>
     public class OrderCreatedState : OrderStateBase
     {
-        public override void Enter(OrderViewModel context)
+        public override async void Enter(OrderViewModel context)
         {
             context.IsLoading = false;
             context.CaptureButtonText = "Chụp lại";
             context.OrderText = "Thanh toán";
             context.IsShowOrderButton = context.Items.Count > 0;
+            context.IsOrderProcessed = false;
+
             if (context.Items.Count == 0)
             {
                 context.DialogService.ShowInfoDialog("Thông báo", "Không tìm thấy mặt hàng nào trong ảnh. Vui lòng chụp lại.");
@@ -224,6 +226,9 @@ namespace SmartStorePOS.ViewModels.States
             else
             {
                 context.IsShowCancelButton = true;
+                
+                // Bắt đầu chế độ đọc thẻ tự động
+                await context.StartAutoCardReadingAsync();
             }
         }
 
@@ -263,21 +268,12 @@ namespace SmartStorePOS.ViewModels.States
             if (!context.ValidateOrder()) 
                 return;
 
-            context.OverlayText = "Đang thực hiện thanh toán ...";
-            context.StateManager.TransitionTo(new PaymentProcessingState());
-
-            var paymentWindow = new PaymentMethodWindow();
-            if (paymentWindow.ShowDialog() == true)
-            {
-                await context.ProcessPayment(paymentWindow.SelectedMethod);
-            }
-            else
-            {
-                context.StateManager.TransitionTo(new OrderCreatedState());
-            }
+            // Thông báo người dùng sử dụng các nút thanh toán mới
+            context.DialogService.ShowInfoDialog("Thông báo", "Vui lòng chọn hình thức thanh toán QR Code hoặc Thẻ thành viên.");
+            return;
         }
 
-        public override void HandleCancel(OrderViewModel context)
+        public override async void HandleCancel(OrderViewModel context)
         {
             if (context.Items.Count > 0)
             {
@@ -286,6 +282,9 @@ namespace SmartStorePOS.ViewModels.States
                     return;
             }
 
+            // Dừng chế độ đọc thẻ tự động
+            await context.StopAutoCardReadingAsync();
+            
             // Giữ nguyên camera, chỉ reset các state và chuyển về CameraActive
             ResetOrderStateKeepCamera(context);
             context.StateManager.TransitionTo(new CameraActiveState());
@@ -327,15 +326,92 @@ namespace SmartStorePOS.ViewModels.States
         public override string GetStateName() => "PaymentProcessing";
     }
 
+    ///// <summary>
+    ///// Trạng thái đơn hàng đã được xử lý, chờ thanh toán
+    ///// </summary>
+    //public class OrderProcessedState : OrderStateBase
+    //{
+    //    public override async void Enter(OrderViewModel context)
+    //    {
+    //        context.IsLoading = false;
+    //        context.CaptureButtonText = "Chụp lại";
+    //        context.OrderText = "Đã xử lý đơn hàng";
+    //        context.IsShowOrderButton = false; // Ẩn nút xử lý đơn hàng
+    //        context.IsShowCancelButton = true;
+            
+    //        // Đánh dấu đơn hàng đã được xử lý
+    //        context.IsOrderProcessed = true;
+            
+    //        // Dừng chế độ đọc thẻ tự động vì đơn hàng đã được xử lý
+    //        await context.StopAutoCardReadingAsync();
+    //    }
+
+    //    public override async Task HandleCaptureImages(OrderViewModel context)
+    //    {
+    //        if (context.Items.Count > 0)
+    //        {
+    //            var result = await context.DialogService.ShowYesNoDialogAsync("Xác nhận", "Chụp ảnh mới sẽ xóa các mặt hàng hiện tại. Bạn có chắc chắn muốn tiếp tục?");
+    //            if (result == false)
+    //                return;
+
+    //            context.Items.Clear();
+    //        }
+
+    //        // Reset các state liên quan đến đơn hàng và BoxedImage
+    //        context.BoxedImage = null;
+    //        context.IsImageUploaded = false;
+    //        context.Order = null;
+    //        context.Total = 0;
+    //        context.InitializeOrder();
+    //        context.IsOrderProcessed = false;
+
+    //        // Nếu camera đang hoạt động, chỉ cần chuyển về trạng thái CameraActive
+    //        if (context.CameraService.IsCameraRunning)
+    //        {
+    //            context.StateManager.TransitionTo(new CameraActiveState());
+    //        }
+    //        else
+    //        {
+    //            // Nếu camera chưa khởi tạo, cần khởi tạo lại
+    //            context.StateManager.TransitionTo(new CameraInitializingState());
+    //            await context.CameraService.InitializeCamera();
+    //        }
+    //    }
+
+    //    public override Task HandleProcessOrder(OrderViewModel context)
+    //    {
+    //        // Đơn hàng đã được xử lý, không cần làm gì
+    //        context.DialogService.ShowInfoDialog("Thông báo", "Đơn hàng đã được xử lý. Vui lòng thực hiện thanh toán.");
+    //        return Task.CompletedTask;
+    //    }
+
+    //    public override async void HandleCancel(OrderViewModel context)
+    //    {
+    //        var result = context.DialogService.ShowYesNoDialog("Xác nhận", "Hủy đơn hàng đã xử lý? Các thông tin sẽ bị mất.");
+    //        if (result == false)
+    //            return;
+
+    //        // Reset trạng thái và chuyển về CameraActive
+    //        ResetOrderStateKeepCamera(context);
+    //        context.IsOrderProcessed = false;
+    //        await context.StopAutoCardReadingAsync();
+    //        context.StateManager.TransitionTo(new CameraActiveState());
+    //    }
+
+    //    public override string GetStateName() => "OrderProcessed";
+    //}
+
     /// <summary>
     /// Trạng thái thanh toán hoàn tất
     /// </summary>
     public class PaymentCompletedState : OrderStateBase
     {
-        public override void Enter(OrderViewModel context)
+        public override async void Enter(OrderViewModel context)
         {
             context.IsLoading = false;
-            context.DialogService.ShowInfoDialog("Thông báo", $"Đã thanh toán thành công số tiền {context.Total:N0} VNĐ");
+
+            // Dừng chế độ đọc thẻ tự động
+            await context.StopAutoCardReadingAsync();
 
             // Reset lại trạng thái về ban đầu
             //ResetOrderViewState(context);
