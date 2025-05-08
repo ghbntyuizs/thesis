@@ -145,7 +145,7 @@ namespace SmartStorePOS.Services
                 }
                 else if (!string.IsNullOrEmpty(cameraIp))
                 {
-                    _videoCaptureArray[index] = new VideoCapture(cameraIp, VideoCaptureAPIs.DSHOW);
+                    _videoCaptureArray[index] = new VideoCapture(cameraIp);
                 }
                 else
                 {

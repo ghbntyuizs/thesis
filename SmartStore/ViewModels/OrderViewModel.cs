@@ -50,6 +50,7 @@ namespace SmartStorePOS.ViewModels
         private string _boxedImage;
 
         private Order _order;
+        private Order _lastPostOrder;
         private ObservableCollection<OrderItem> _items;
 
         private BitmapSource _streamImage1;
@@ -66,6 +67,12 @@ namespace SmartStorePOS.ViewModels
         {
             get => _order;
             set => SetProperty(ref _order, value);
+        }
+
+        public Order LastPostOrder
+        {
+            get => _lastPostOrder;
+            set => SetProperty(ref _lastPostOrder, value);
         }
 
         public string QrCodeUrl
@@ -384,6 +391,7 @@ namespace SmartStorePOS.ViewModels
                     CapturedImage2,
                     CapturedImage3);
 
+                LastPostOrder = order;
 
                 // Cập nhật URL hình ảnh từ processor
                 ImageUrl1 = _orderImageProcessor.ImageUrl1 ?? order.Image1;

@@ -12,5 +12,9 @@
         public string Image2 { get; set; }
         public string Image3 { get; set; }
         public string BoxedImage { get; set; }
+        public bool IsCorrection { get; set; } = false;
+        public bool IsFlagged { get; set; } = false;
+        public string Warning { get; set; }
+        public string OrderCode { get; set; }
     }
 }

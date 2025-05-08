@@ -40,27 +40,44 @@ namespace SmartStorePOS.Services
                     var image2Path = image2 != null ? ImageHelper.SaveImageToTempFile(image2) : null;
                     var image3Path = image3 != null ? ImageHelper.SaveImageToTempFile(image3) : null;
 
+                    // tạo mảng imagePath
+                    var imagePaths = new[] { image1Path, image2Path, image3Path };
+
+                    var uploadTasks = new List<Task>();
+
                     // Gọi API để upload hình ảnh
                     if (image1Path != null)
                     {
-                        var uploadResponse1 = await _apiService.UploadImageAsync(image1Path);
-                        _imageUrl1 = uploadResponse1.image_url;
-                        ImageHelper.DeleteTempFile(image1Path); // Xóa file tạm sau khi upload
+                        uploadTasks.Add(Task.Run(async () =>
+                        {
+                            var uploadResponse1 = await _apiService.UploadImageAsync(image1Path);
+                            _imageUrl1 = uploadResponse1.image_url;
+                            ImageHelper.DeleteTempFile(image1Path); // Xóa file tạm sau khi upload
+                        }));
                     }
 
                     if (image2Path != null)
                     {
-                        var uploadResponse2 = await _apiService.UploadImageAsync(image2Path);
-                        _imageUrl2 = uploadResponse2.image_url;
-                        ImageHelper.DeleteTempFile(image2Path); // Xóa file tạm sau khi upload
+                        uploadTasks.Add(Task.Run(async () =>
+                        {
+                            var uploadResponse2 = await _apiService.UploadImageAsync(image2Path);
+                            _imageUrl2 = uploadResponse2.image_url;
+                            ImageHelper.DeleteTempFile(image2Path); // Xóa file tạm sau khi upload
+                        }));
                     }
 
                     if (image3Path != null)
                     {
-                        var uploadResponse3 = await _apiService.UploadImageAsync(image3Path);
-                        _imageUrl3 = uploadResponse3.image_url;
-                        ImageHelper.DeleteTempFile(image3Path); // Xóa file tạm sau khi upload
+                        uploadTasks.Add(Task.Run(async () =>
+                        {
+                            var uploadResponse3 = await _apiService.UploadImageAsync(image3Path);
+                            _imageUrl3 = uploadResponse3.image_url;
+                            ImageHelper.DeleteTempFile(image3Path); // Xóa file tạm sau khi upload
+                        }));
                     }
+
+                    // Chờ tất cả các tác vụ upload hoàn thành
+                    await Task.WhenAll(uploadTasks);
                 }
                 else
                 {

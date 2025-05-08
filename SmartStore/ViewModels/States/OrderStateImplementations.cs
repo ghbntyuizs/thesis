@@ -215,10 +215,15 @@ namespace SmartStorePOS.ViewModels.States
             context.IsLoading = false;
             context.CaptureButtonText = "Chụp lại";
             context.OrderText = "Thanh toán";
-            context.IsShowOrderButton = context.Items.Count > 0;
-            if (context.Items.Count == 0)
+            context.IsShowOrderButton = true;
+            if (!string.IsNullOrEmpty(context.LastPostOrder.Warning))
             {
-                context.DialogService.ShowInfoDialog("Thông báo", "Không tìm thấy mặt hàng nào trong ảnh. Vui lòng chụp lại.");
+                context.DialogService.ShowInfoDialog("Cảnh báo", "Tổng số lượng sản phẩm không khớp so với số lượng trên hình");
+            }
+            else if (context.Items.Count == 0)
+            {
+                context.IsShowOrderButton = false;
+                context.DialogService.ShowInfoDialog("Cảnh báo", "Không tìm thấy mặt hàng nào trong ảnh. Vui lòng chụp lại.");
                 context.StateManager.TransitionTo(new CameraActiveState());
             }
             else
@@ -260,7 +265,7 @@ namespace SmartStorePOS.ViewModels.States
 
         public override async Task HandleProcessOrder(OrderViewModel context)
         {
-            if (!context.ValidateOrder()) 
+            if (!context.ValidateOrder())
                 return;
 
             context.OverlayText = "Đang thực hiện thanh toán ...";

@@ -77,6 +77,7 @@
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*"/>
                             <RowDefinition Height="*"/>
+                            <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
                         
                         <!-- Camera 1 -->
@@ -84,20 +85,31 @@
                             <Grid>
                                 <Image Visibility="{Binding IsCaptured, Converter={StaticResource InverseBoolToVisibilityConverter}}" Source="{Binding StreamImage1}" Stretch="Uniform" Margin="5"/>
                                 <Image Visibility="{Binding IsCaptured, Converter={StaticResource BooleanToVisibilityConverter}}" Source="{Binding CapturedImage1}" Stretch="Uniform" Margin="5"/>
-                                <TextBlock Visibility="{Binding IsCameraRunning, Converter={StaticResource BooleanToVisibilityConverter}}" Text="Máy ảnh đang chạy..."
+                                <TextBlock Visibility="{Binding IsCameraRunning, Converter={StaticResource BooleanToVisibilityConverter}}" Text="Máy ảnh 1"
                                Foreground="Red" FontSize="12" FontWeight="SemiBold" Margin="5" 
                                HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
                             </Grid>
                         </Border>
                         
-                        <!-- BoxedImage - Hình ảnh phân tích sản phẩm -->
-                        <Border Grid.Row="1" BorderBrush="#EEEEEE" BorderThickness="1" Margin="10,5,10,10" Background="#F8F8F8">
+                        <!-- Camera 2 -->
+                        <Border Grid.Row="1" BorderBrush="#EEEEEE" BorderThickness="1" Margin="10,5,10,5" Background="#F8F8F8">
                             <Grid>
-                                <Image Source="{Binding BoxedImage, Converter={StaticResource Base64ToImageConverter}}" Stretch="Uniform" Margin="5"/>
-                                <TextBlock Text="Hình ảnh phân tích sản phẩm" 
-                                   Visibility="{Binding BoxedImage, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=Inverse}"
-                                   Foreground="#999999" FontSize="12" 
-                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Image Visibility="{Binding IsCaptured, Converter={StaticResource InverseBoolToVisibilityConverter}}" Source="{Binding StreamImage2}" Stretch="Uniform" Margin="5"/>
+                                <Image Visibility="{Binding IsCaptured, Converter={StaticResource BooleanToVisibilityConverter}}" Source="{Binding CapturedImage2}" Stretch="Uniform" Margin="5"/>
+                                <TextBlock Visibility="{Binding IsCameraRunning, Converter={StaticResource BooleanToVisibilityConverter}}" Text="Máy ảnh 2"
+                               Foreground="Red" FontSize="12" FontWeight="SemiBold" Margin="5" 
+                               HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
+                            </Grid>
+                        </Border>
+                        
+                        <!-- Camera 3 -->
+                        <Border Grid.Row="2" BorderBrush="#EEEEEE" BorderThickness="1" Margin="10,5,10,10" Background="#F8F8F8">
+                            <Grid>
+                                <Image Visibility="{Binding IsCaptured, Converter={StaticResource InverseBoolToVisibilityConverter}}" Source="{Binding StreamImage3}" Stretch="Uniform" Margin="5"/>
+                                <Image Visibility="{Binding IsCaptured, Converter={StaticResource BooleanToVisibilityConverter}}" Source="{Binding CapturedImage3}" Stretch="Uniform" Margin="5"/>
+                                <TextBlock Visibility="{Binding IsCameraRunning, Converter={StaticResource BooleanToVisibilityConverter}}" Text="Máy ảnh 3"
+                               Foreground="Red" FontSize="12" FontWeight="SemiBold" Margin="5" 
+                               HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
                             </Grid>
                         </Border>
                     </Grid>
