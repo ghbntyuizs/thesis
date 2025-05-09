@@ -395,7 +395,7 @@ namespace SmartStorePOS.ViewModels
                 // Chỉ xử lý khi ở trạng thái OrderCreatedState và chưa xử lý đơn hàng
                 if (StateManager.GetCurrentState().GetStateName() == "OrderCreated" && !IsOrderProcessed)
                 {
-                    Application.Current.Dispatcher.Invoke(async () =>
+                    _ = Application.Current.Dispatcher.Invoke(async () =>
                     {
                         CardReaderStatus = "Đã phát hiện thẻ, đang xử lý...";
                         await HandleProcessOrderByCard(cardNumber);
