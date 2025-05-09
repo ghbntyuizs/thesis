@@ -1,5 +1,3 @@
-using SmartStorePOS.Views;
-
 namespace SmartStorePOS.ViewModels.States
 {
     /// <summary>
@@ -226,7 +224,7 @@ namespace SmartStorePOS.ViewModels.States
             else
             {
                 context.IsShowCancelButton = true;
-                
+
                 // Bắt đầu chế độ đọc thẻ tự động
                 await context.StartAutoCardReadingAsync();
             }
@@ -265,7 +263,7 @@ namespace SmartStorePOS.ViewModels.States
 
         public override async Task HandleProcessOrder(OrderViewModel context)
         {
-            if (!context.ValidateOrder()) 
+            if (!context.ValidateOrder())
                 return;
 
             // Thông báo người dùng sử dụng các nút thanh toán mới
@@ -284,7 +282,7 @@ namespace SmartStorePOS.ViewModels.States
 
             // Dừng chế độ đọc thẻ tự động
             await context.StopAutoCardReadingAsync();
-            
+
             // Giữ nguyên camera, chỉ reset các state và chuyển về CameraActive
             ResetOrderStateKeepCamera(context);
             context.StateManager.TransitionTo(new CameraActiveState());
@@ -338,10 +336,10 @@ namespace SmartStorePOS.ViewModels.States
     //        context.OrderText = "Đã xử lý đơn hàng";
     //        context.IsShowOrderButton = false; // Ẩn nút xử lý đơn hàng
     //        context.IsShowCancelButton = true;
-            
+
     //        // Đánh dấu đơn hàng đã được xử lý
     //        context.IsOrderProcessed = true;
-            
+
     //        // Dừng chế độ đọc thẻ tự động vì đơn hàng đã được xử lý
     //        await context.StopAutoCardReadingAsync();
     //    }

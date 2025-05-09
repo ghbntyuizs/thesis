@@ -416,16 +416,8 @@ namespace SmartStorePOS.ViewModels
                 if (paymentResponse.Status != "SUCCESS")
                 {
                     IsLoading = false;
-                    if (!string.IsNullOrEmpty(paymentResponse.Msg))
-                    {
-                        CardReaderStatus = OverlayText = "Số dư thẻ không đủ để thanh toán";
-                        DialogService.ShowInfoDialog("Thông báo", $"Số dư thẻ không đủ để thanh toán.");
-                    }
-                    else
-                    {
-                        CardReaderStatus = OverlayText = "Đã có lỗi xảy ra khi thanh toán vui lòng thử lại.";
-                        DialogService.ShowInfoDialog("Thông báo", $"Đã có lỗi xảy ra khi thanh toán vui lòng thử lại.");
-                    }
+                    CardReaderStatus = OverlayText = paymentResponse.Msg ?? "Thanh toán không thành công, vui lòng thử lại.";
+                    DialogService.ShowInfoDialog("Thông báo", paymentResponse.Msg ?? "Thanh toán không thành công, vui lòng thử lại.");
                     StateManager.TransitionTo(new OrderCreatedState());
                     return;
                 }
