@@ -67,6 +67,8 @@ namespace SmartStorePOS.ViewModels
 
         private decimal _total;
 
+        public Action? FocusMainWindow;
+
         public Order Order
         {
             get => _order;
@@ -465,6 +467,8 @@ namespace SmartStorePOS.ViewModels
                     qrWindow.Close();
                 }
 
+                FocusMainWindow?.Invoke();
+
                 //"Thanh toán thành công!";
                 //DialogService.ShowInfoDialog("Thông báo", $"Đã thanh toán thành công số tiền {paymentResponse.Amount:N0} VNĐ. Số dư thẻ còn lại: {paymentResponse.RemainBalance:N0} VNĐ.");
                 //StateManager.TransitionTo(new PaymentCompletedState());
@@ -480,6 +484,7 @@ namespace SmartStorePOS.ViewModels
                 IsLoading = false;
                 IsShowOrderButton = true;
                 OverlayText = "";
+                StateManager.TransitionTo(new OrderCreatedState());
             }
         }
 
