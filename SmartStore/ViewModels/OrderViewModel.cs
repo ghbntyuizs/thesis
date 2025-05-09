@@ -413,11 +413,22 @@ namespace SmartStorePOS.ViewModels
                     CardId = UuidConverter.ToUuidV4(cardNumber),
                 });
 
+                IsLoading = false;
                 if (paymentResponse.Status != "SUCCESS")
                 {
-                    IsLoading = false;
-                    CardReaderStatus = OverlayText = paymentResponse.Msg ?? "Thanh toán không thành công, vui lòng thử lại.";
-                    DialogService.ShowInfoDialog("Thông báo", paymentResponse.Msg ?? "Thanh toán không thành công, vui lòng thử lại.");
+                    string msg = paymentResponse.Msg ?? "Thanh toán không thành công, vui lòng thử lại.";
+                    if (msg.Contains("not found", StringComparison.OrdinalIgnoreCase))
+                    {
+                        msg = "Thẻ không tồn tại trong hệ thống!";
+                    }
+
+                    if (msg.Contains("not enough", StringComparison.OrdinalIgnoreCase))
+                    {
+                        msg = "Số dư tài khoản không đủ để thực hiện giao dịch này";
+                    }
+
+                    CardReaderStatus = OverlayText = msg;
+                    DialogService.ShowInfoDialog("Thông báo", msg);
                     StateManager.TransitionTo(new OrderCreatedState());
                     return;
                 }
