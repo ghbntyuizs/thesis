@@ -405,32 +405,41 @@ namespace SmartStorePOS.ViewModels
             CardReaderStatus = OverlayText = "Đang thực hiện thanh toán...";
             StateManager.TransitionTo(new PaymentProcessingState());
 
-            var paymentResponse = await _apiService.CreatePaymentAsync(new CreatePaymentRequest
+            try
             {
-                OrderId = Guid.Parse(Order.OrderId),
-                CardId = UuidConverter.ToUuidV4(cardNumber),
-            });
-
-            if (paymentResponse.Status != "SUCCESS")
-            {
-                IsLoading = false;
-                CardReaderStatus = OverlayText = "Đã xảy ra lỗi khi thanh toán.";
-                if (paymentResponse.Amount > paymentResponse.RemainBalance)
+                var paymentResponse = await _apiService.CreatePaymentAsync(new CreatePaymentRequest
                 {
-                    DialogService.ShowInfoDialog("Thông báo", $"Số dư thẻ không đủ để thanh toán. Số dư hiện tại: {paymentResponse.RemainBalance:N0} VNĐ, số tiền cần thanh toán: {paymentResponse.Amount:N0} VNĐ.");
-                }
-                else
+                    OrderId = Guid.Parse(Order.OrderId),
+                    CardId = UuidConverter.ToUuidV4(cardNumber),
+                });
+
+                if (paymentResponse.Status != "SUCCESS")
                 {
-                    DialogService.ShowInfoDialog("Thông báo", "Đã xảy ra lỗi khi thanh toán.");
+                    IsLoading = false;
+                    if (!string.IsNullOrEmpty(paymentResponse.Msg))
+                    {
+                        CardReaderStatus = OverlayText = "Số dư thẻ không đủ để thanh toán";
+                        DialogService.ShowInfoDialog("Thông báo", $"Số dư thẻ không đủ để thanh toán.");
+                    }
+                    else
+                    {
+                        CardReaderStatus = OverlayText = "Đã có lỗi xảy ra khi thanh toán vui lòng thử lại.";
+                        DialogService.ShowInfoDialog("Thông báo", $"Đã có lỗi xảy ra khi thanh toán vui lòng thử lại.");
+                    }
+                    StateManager.TransitionTo(new OrderCreatedState());
+                    return;
                 }
 
-                StateManager.TransitionTo(new OrderCreatedState());
-                return;
+                CardReaderStatus = "Thanh toán thành công!";
+                DialogService.ShowInfoDialog("Thông báo", $"Đã thanh toán thành công số tiền {paymentResponse.Amount:N0} VNĐ. Số dư thẻ còn lại: {paymentResponse.RemainBalance:N0} VNĐ.");
+                StateManager.TransitionTo(new PaymentCompletedState());
             }
-
-            CardReaderStatus = "Thanh toán thành công!";
-            DialogService.ShowInfoDialog("Thông báo", $"Đã thanh toán thành công số tiền {paymentResponse.Amount:N0} VNĐ. Số dư thẻ còn lại: {paymentResponse.RemainBalance:N0} VNĐ.");
-            StateManager.TransitionTo(new PaymentCompletedState());
+            catch (Exception ex)
+            {
+                CardReaderStatus = OverlayText = ex.Message;
+                DialogService.ShowInfoDialog("Thông báo", $"{ex.Message}");
+                StateManager.TransitionTo(new OrderCreatedState());
+            }
         }
 
         /// <summary>

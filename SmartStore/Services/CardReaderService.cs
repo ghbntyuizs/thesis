@@ -110,7 +110,7 @@ namespace SmartStorePOS.Services
 
                     _cardDataBuffer.Append(digit);
                 }
-                else if (e.Key == Key.Enter || e.Key == Key.Home)
+                else if (e.Key == Key.OemQuestion)
                 {
                     // Xử lý khi Enter được nhấn
                     ProcessCardNumber();
@@ -133,9 +133,6 @@ namespace SmartStorePOS.Services
 
             if (!string.IsNullOrEmpty(cardNumber))
             {
-                // Mô phỏng mã thẻ thành viên
-                cardNumber = "0002008235"; // Mã mặc định cho demo
-
                 // Kích hoạt sự kiện thẻ được quét
                 CardScanned?.Invoke(this, cardNumber);
             }

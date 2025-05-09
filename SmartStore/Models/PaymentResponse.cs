@@ -7,5 +7,7 @@
         public DateTime TimeStamp { get; set; }
         public string Status { get; set; }
         public decimal RemainBalance { get; set; }
+
+        public string? Msg { get; set; }
     }
 }

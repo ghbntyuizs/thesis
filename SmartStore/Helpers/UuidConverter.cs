@@ -16,7 +16,7 @@ namespace SmartStorePOS.Helpers
             // Validate input: must be exactly 10 digits
             if (string.IsNullOrEmpty(digits) || digits.Length != 10 || !digits.All(char.IsDigit))
             {
-                throw new ArgumentException("Input must be a string of exactly 10 digits.", nameof(digits));
+                throw new ArgumentException("Lỗi hệ thống, vui long thử lại !!.");
             }
 
             // UUIDv4 format: 8-4-4-4-12 (e.g., 123e4567-e89b-12d3-a456-426614174000)
