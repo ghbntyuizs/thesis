@@ -1,5 +1,3 @@
-using SmartStorePOS.Views;
-
 namespace SmartStorePOS.ViewModels.States
 {
     /// <summary>
@@ -210,25 +208,30 @@ namespace SmartStorePOS.ViewModels.States
     /// </summary>
     public class OrderCreatedState : OrderStateBase
     {
-        public override void Enter(OrderViewModel context)
+        public override async void Enter(OrderViewModel context)
         {
             context.IsLoading = false;
             context.CaptureButtonText = "Chụp lại";
             context.OrderText = "Thanh toán";
-            context.IsShowOrderButton = true;
+            context.IsShowOrderButton = context.Items.Count > 0;
+            context.IsOrderProcessed = false;
+
             if (!string.IsNullOrEmpty(context.LastPostOrder.Warning))
             {
+                context.IsShowOrderButton = false;
                 context.DialogService.ShowInfoDialog("Cảnh báo", "Tổng số lượng sản phẩm không khớp so với số lượng trên hình");
             }
             else if (context.Items.Count == 0)
             {
-                context.IsShowOrderButton = false;
-                context.DialogService.ShowInfoDialog("Cảnh báo", "Không tìm thấy mặt hàng nào trong ảnh. Vui lòng chụp lại.");
+                context.DialogService.ShowInfoDialog("Thông báo", "Không tìm thấy mặt hàng nào trong ảnh. Vui lòng chụp lại.");
                 context.StateManager.TransitionTo(new CameraActiveState());
             }
             else
             {
                 context.IsShowCancelButton = true;
+
+                // Bắt đầu chế độ đọc thẻ tự động
+                await context.StartAutoCardReadingAsync();
             }
         }
 
@@ -268,21 +271,25 @@ namespace SmartStorePOS.ViewModels.States
             if (!context.ValidateOrder())
                 return;
 
-            context.OverlayText = "Đang thực hiện thanh toán ...";
-            context.StateManager.TransitionTo(new PaymentProcessingState());
+            //context.OverlayText = "Đang thực hiện thanh toán ...";
+            //context.StateManager.TransitionTo(new PaymentProcessingState());
 
-            var paymentWindow = new PaymentMethodWindow();
-            if (paymentWindow.ShowDialog() == true)
-            {
-                await context.ProcessPayment(paymentWindow.SelectedMethod);
-            }
-            else
-            {
-                context.StateManager.TransitionTo(new OrderCreatedState());
-            }
+            //var paymentWindow = new PaymentMethodWindow();
+            //if (paymentWindow.ShowDialog() == true)
+            //{
+            //    await context.ProcessPayment(paymentWindow.SelectedMethod);
+            //}
+            //else
+            //{
+            //    context.StateManager.TransitionTo(new OrderCreatedState());
+            //}
+
+            // Thông báo người dùng sử dụng các nút thanh toán mới
+            context.DialogService.ShowInfoDialog("Thông báo", "Vui lòng chọn hình thức thanh toán QR Code hoặc Thẻ thành viên.");
+            return;
         }
 
-        public override void HandleCancel(OrderViewModel context)
+        public override async void HandleCancel(OrderViewModel context)
         {
             if (context.Items.Count > 0)
             {
@@ -290,6 +297,9 @@ namespace SmartStorePOS.ViewModels.States
                 if (result == false)
                     return;
             }
+
+            // Dừng chế độ đọc thẻ tự động
+            await context.StopAutoCardReadingAsync();
 
             // Giữ nguyên camera, chỉ reset các state và chuyển về CameraActive
             ResetOrderStateKeepCamera(context);
@@ -337,10 +347,13 @@ namespace SmartStorePOS.ViewModels.States
     /// </summary>
     public class PaymentCompletedState : OrderStateBase
     {
-        public override void Enter(OrderViewModel context)
+        public override async void Enter(OrderViewModel context)
         {
             context.IsLoading = false;
             context.DialogService.ShowInfoDialog("Thông báo", $"Đã thanh toán thành công số tiền {context.Total:N0} VNĐ");
+
+            // Dừng chế độ đọc thẻ tự động
+            await context.StopAutoCardReadingAsync();
 
             // Reset lại trạng thái về ban đầu
             //ResetOrderViewState(context);

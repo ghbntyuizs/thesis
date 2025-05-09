@@ -79,7 +79,7 @@
                             <RowDefinition Height="*"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        
+
                         <!-- Camera 1 -->
                         <Border Grid.Row="0" BorderBrush="#EEEEEE" BorderThickness="1" Margin="10,10,10,5" Background="#F8F8F8">
                             <Grid>
@@ -90,7 +90,7 @@
                                HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
                             </Grid>
                         </Border>
-                        
+
                         <!-- Camera 2 -->
                         <Border Grid.Row="1" BorderBrush="#EEEEEE" BorderThickness="1" Margin="10,5,10,5" Background="#F8F8F8">
                             <Grid>
@@ -101,7 +101,7 @@
                                HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
                             </Grid>
                         </Border>
-                        
+
                         <!-- Camera 3 -->
                         <Border Grid.Row="2" BorderBrush="#EEEEEE" BorderThickness="1" Margin="10,5,10,10" Background="#F8F8F8">
                             <Grid>
@@ -236,44 +236,136 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Cancel Button Moved to Right Side -->
-                    <Button Command="{Binding CancelCommand}" Visibility="{Binding IsShowCancelButton, Converter={StaticResource BooleanToVisibilityConverter}}" Width="120" Height="60" 
-                        Background="#F44336" Foreground="White" FontSize="16" FontWeight="SemiBold"
+                    <!-- Nút thanh toán - Chỉ hiển thị khi đơn hàng đã được xử lý -->
+                    <!--<Button Command="{Binding PaymentCommand}" Visibility="{Binding IsOrderProcessed, Converter={StaticResource BooleanToVisibilityConverter}}" Width="140" Height="60" 
+                        Background="#FF9800" Foreground="White" FontSize="16" FontWeight="SemiBold"
                         BorderThickness="0" Cursor="Hand" Margin="0,0,20,0">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
-                                <Border Background="{TemplateBinding Background}" 
+                                <Border x:Name="border" Background="#FF9800" 
                                     BorderBrush="{TemplateBinding BorderBrush}" 
                                     BorderThickness="{TemplateBinding BorderThickness}"
                                     CornerRadius="4">
+                                    <Border.Effect>
+                                        <DropShadowEffect Color="#FF9800" 
+                                                        BlurRadius="15" 
+                                                        ShadowDepth="2" 
+                                                        Opacity="0.3"/>
+                                    </Border.Effect>
                                     <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="border" Property="Background" Value="#F57C00"/>
+                                        <Setter TargetName="border" Property="RenderTransform">
+                                            <Setter.Value>
+                                                <ScaleTransform ScaleX="1.02" ScaleY="1.02"/>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Trigger>
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter TargetName="border" Property="Background" Value="#E65100"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
                             </ControlTemplate>
                         </Button.Template>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#xE711;" FontFamily="Segoe MDL2 Assets" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <TextBlock Text="Hủy bỏ"/>
+                            <TextBlock Text="&#xE8A1;" FontFamily="Segoe MDL2 Assets" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="Thanh toán" />
+                        </StackPanel>
+                    </Button>-->
+
+                    <!-- QR Code Button - Chỉ hiển thị khi ở trạng thái OrderCreatedState -->
+                    <Button Command="{Binding QRCodePaymentCommand}" 
+                        Visibility="{Binding IsShowOrderButton, Converter={StaticResource BooleanToVisibilityConverter}}" 
+                        Width="140" Height="60" 
+                        Background="#4CAF50" Foreground="White" FontSize="16" FontWeight="SemiBold"
+                        BorderThickness="0" Cursor="Hand" Margin="0,0,20,0">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="border" Background="#4CAF50" 
+                                    BorderBrush="{TemplateBinding BorderBrush}" 
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="4">
+                                    <Border.Effect>
+                                        <DropShadowEffect Color="#4CAF50" 
+                                                        BlurRadius="15" 
+                                                        ShadowDepth="2" 
+                                                        Opacity="0.3"/>
+                                    </Border.Effect>
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="border" Property="Background" Value="#43A047"/>
+                                        <Setter TargetName="border" Property="RenderTransform">
+                                            <Setter.Value>
+                                                <ScaleTransform ScaleX="1.02" ScaleY="1.02"/>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Trigger>
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter TargetName="border" Property="Background" Value="#388E3C"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE8B3;" FontFamily="Segoe MDL2 Assets" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="QR Code" />
                         </StackPanel>
                     </Button>
 
-                    <Button Command="{Binding ProcessOrderCommand}" Visibility="{Binding IsShowOrderButton, Converter={StaticResource BooleanToVisibilityConverter}}" Width="160" Height="60" 
-                        Background="#4CAF50" Foreground="White" FontSize="16" FontWeight="SemiBold"
+                    <!-- Card Reader Status -->
+                    <Border Background="#FFECB3" BorderBrush="#FFE082" BorderThickness="0" CornerRadius="8" Width="200" Padding="15,8" Margin="0,0,0,0" Visibility="{Binding IsCardReaderActive, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE8D1;" FontFamily="Segoe MDL2 Assets" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBlock Text="{Binding CardReaderStatus}" FontSize="14" FontWeight="SemiBold" Foreground="#FF6F00" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <ProgressBar IsIndeterminate="True" Height="2" Margin="0,5,0,0" Background="Transparent" Foreground="#FF9800"/>
+                        </StackPanel>
+                    </Border>
+                    <!-- Membership Card Button - Hiển thị khi đơn hàng chưa xử lý -->
+                    <!--<Button Command="{Binding MembershipCardPaymentCommand}" 
+                        Visibility="{Binding IsOrderProcessed, Converter={StaticResource InverseBoolToVisibilityConverter}}" 
+                        Width="160" Height="60" 
+                        Background="#2196F3" Foreground="White" FontSize="16" FontWeight="SemiBold"
                         BorderThickness="0" Cursor="Hand">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
-                                <Border Background="{TemplateBinding Background}" 
+                                <Border x:Name="border" Background="#2196F3" 
                                     BorderBrush="{TemplateBinding BorderBrush}" 
                                     BorderThickness="{TemplateBinding BorderThickness}"
                                     CornerRadius="4">
+                                    <Border.Effect>
+                                        <DropShadowEffect Color="#2196F3" 
+                                                        BlurRadius="15" 
+                                                        ShadowDepth="2" 
+                                                        Opacity="0.3"/>
+                                    </Border.Effect>
                                     <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="border" Property="Background" Value="#1E88E5"/>
+                                        <Setter TargetName="border" Property="RenderTransform">
+                                            <Setter.Value>
+                                                <ScaleTransform ScaleX="1.02" ScaleY="1.02"/>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Trigger>
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter TargetName="border" Property="Background" Value="#1976D2"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
                             </ControlTemplate>
                         </Button.Template>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#xE930;" FontFamily="Segoe MDL2 Assets" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <TextBlock Text="{Binding OrderText, FallbackValue='Xử lý đơn hàng'}" />
+                            <TextBlock Text="&#xE8D1;" FontFamily="Segoe MDL2 Assets" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="Thẻ thành viên" />
                         </StackPanel>
-                    </Button>
+                    </Button>-->
                 </StackPanel>
             </Grid>
         </Border>

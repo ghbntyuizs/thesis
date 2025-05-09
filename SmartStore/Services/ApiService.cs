@@ -156,10 +156,18 @@ namespace SmartStorePOS.Services
                 "application/json");
 
             var response = await _httpClient.PostAsync("/api/payment", content);
-            response.EnsureSuccessStatusCode();
-            var responseString = response.Content.ReadAsStringAsync();
+            var responseString = await response.Content.ReadAsStringAsync();
+            if (!response.IsSuccessStatusCode)
+            {
+                return new PaymentResponse
+                {
+                    Status = "FAILED",
+                    Msg = responseString
+                };
+            }
+
             var paymentResponse = JsonSerializer.Deserialize<PaymentResponse>(
-                responseString.Result,
+                responseString,
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
             return paymentResponse;

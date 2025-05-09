@@ -13,59 +13,66 @@ namespace SmartStorePOS.Helpers
         /// <exception cref="ArgumentException">Thrown if input is not 10 digits.</exception>
         public static Guid ToUuidV4(string digits)
         {
-            // Validate input: must be exactly 10 digits
-            if (string.IsNullOrEmpty(digits) || digits.Length != 10 || !digits.All(char.IsDigit))
+            try
             {
-                throw new ArgumentException("Input must be a string of exactly 10 digits.", nameof(digits));
+                // Validate input: must be exactly 10 digits
+                //if (string.IsNullOrEmpty(digits) || digits.Length != 10 || !digits.All(char.IsDigit))
+                //{
+                //    throw new ArgumentException("Input must be a string of exactly 10 digits.", nameof(digits));
+                //}
+
+                // UUIDv4 format: 8-4-4-4-12 (e.g., 123e4567-e89b-12d3-a456-426614174000)
+                // We'll use the 10 digits directly and pad with derived/fixed values
+                StringBuilder uuid = new StringBuilder(36);
+
+                // Part 1: First 8 hex chars (use first 8 digits)
+                uuid.Append(digits.Substring(0, 8)); // e.g., "00020082"
+
+                // Hyphen
+                uuid.Append('-');
+
+                // Part 2: Next 4 hex chars (use last 2 digits + "00")
+                uuid.Append(digits.Substring(8, 2)); // e.g., "35"
+                uuid.Append("00"); // Pad to 4 chars
+
+                // Hyphen
+                uuid.Append('-');
+
+                // Part 3: Next 4 hex chars (version 4 + 3 derived chars)
+                uuid.Append('4'); // UUIDv4 version
+                                  // Derive 3 chars: use sum of digits mod 16 for variety
+                int sum = digits.Sum(c => c - '0');
+                uuid.AppendFormat("{0:x3}", sum % 4096); // 3 hex chars (e.g., "07b")
+
+                // Hyphen
+                uuid.Append('-');
+
+                // Part 4: Next 4 hex chars (variant + 3 derived chars)
+                uuid.Append('8'); // Variant (8, 9, a, or b; we choose 8)
+                                  // Use last 3 digits reversed for variety
+                uuid.Append(digits[9]); // e.g., "5"
+                uuid.Append(digits[8]); // e.g., "3"
+                uuid.Append(digits[7]); // e.g., "2"
+
+                // Hyphen
+                uuid.Append('-');
+
+                // Part 5: Last 12 hex chars (repeat digits + pad with zeros)
+                uuid.Append(digits); // e.g., "0002008235"
+                uuid.Append("00"); // Pad to 12 chars
+
+                // Convert to Guid
+                Guid result = Guid.Empty;
+                if (!Guid.TryParse(uuid.ToString(), out result))
+                {
+                    throw new ArgumentException("Failed to convert to UUIDv4.", nameof(digits));
+                }
+                return result;
             }
-
-            // UUIDv4 format: 8-4-4-4-12 (e.g., 123e4567-e89b-12d3-a456-426614174000)
-            // We'll use the 10 digits directly and pad with derived/fixed values
-            StringBuilder uuid = new StringBuilder(36);
-
-            // Part 1: First 8 hex chars (use first 8 digits)
-            uuid.Append(digits.Substring(0, 8)); // e.g., "00020082"
-
-            // Hyphen
-            uuid.Append('-');
-
-            // Part 2: Next 4 hex chars (use last 2 digits + "00")
-            uuid.Append(digits.Substring(8, 2)); // e.g., "35"
-            uuid.Append("00"); // Pad to 4 chars
-
-            // Hyphen
-            uuid.Append('-');
-
-            // Part 3: Next 4 hex chars (version 4 + 3 derived chars)
-            uuid.Append('4'); // UUIDv4 version
-            // Derive 3 chars: use sum of digits mod 16 for variety
-            int sum = digits.Sum(c => c - '0');
-            uuid.AppendFormat("{0:x3}", sum % 4096); // 3 hex chars (e.g., "07b")
-
-            // Hyphen
-            uuid.Append('-');
-
-            // Part 4: Next 4 hex chars (variant + 3 derived chars)
-            uuid.Append('8'); // Variant (8, 9, a, or b; we choose 8)
-            // Use last 3 digits reversed for variety
-            uuid.Append(digits[9]); // e.g., "5"
-            uuid.Append(digits[8]); // e.g., "3"
-            uuid.Append(digits[7]); // e.g., "2"
-
-            // Hyphen
-            uuid.Append('-');
-
-            // Part 5: Last 12 hex chars (repeat digits + pad with zeros)
-            uuid.Append(digits); // e.g., "0002008235"
-            uuid.Append("00"); // Pad to 12 chars
-
-            // Convert to Guid
-            Guid result = Guid.Empty;
-            if (!Guid.TryParse(uuid.ToString(), out result))
+            catch (Exception ex)
             {
-                throw new ArgumentException("Failed to convert to UUIDv4.", nameof(digits));
+                return Guid.Empty;
             }
-            return result;
         }
 
         /// <summary>

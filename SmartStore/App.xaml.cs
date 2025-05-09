@@ -36,6 +36,7 @@ namespace SmartStorePOS
             services.AddSingleton<ICameraService, CameraService>();
             services.AddSingleton<IOrderImageProcessor, OrderImageProcessor>();
             services.AddSingleton<IPaymentProcessor, PaymentProcessor>();
+            services.AddSingleton<ICardReaderService, CardReaderService>();
 
             // Register ViewModels
             services.AddTransient<LoginViewModel>();
