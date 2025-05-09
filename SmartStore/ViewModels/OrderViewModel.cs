@@ -304,10 +304,9 @@ namespace SmartStorePOS.ViewModels
             CopyImageUrl3Command = new RelayCommand(_ => CopyTextToClipboard(ImageUrl3));
 
             // Command thanh toán
-            //QRCodePaymentCommand = new RelayCommand(async _ => await HandleQRCodePayment());
-            QRCodePaymentCommand = new RelayCommand(_ => DialogService.ShowInfoDialog("Thông báo", "Tính năng thanh toán QR Code đang được phát triển."));
+            QRCodePaymentCommand = new RelayCommand(_ => HandleQRCodePayment());
+            //QRCodePaymentCommand = new RelayCommand(_ => DialogService.ShowInfoDialog("Thông báo", "Tính năng thanh toán QR Code đang được phát triển."));
             //MembershipCardPaymentCommand = new RelayCommand(async _ => await HandleMembershipCardPayment());
-            //PaymentCommand = new RelayCommand(async _ => await HandlePayment());
 
             // Bắt đầu lắng nghe thẻ ngay khi khởi tạo
             // StartAutoCardReadingAsync().ConfigureAwait(false);
@@ -367,7 +366,7 @@ namespace SmartStorePOS.ViewModels
                 // Chỉ xử lý khi ở trạng thái OrderCreatedState và chưa xử lý đơn hàng
                 if (StateManager.GetCurrentState().GetStateName() == "OrderCreated" && !IsOrderProcessed)
                 {
-                    Application.Current.Dispatcher.Invoke(async () =>
+                    await Application.Current.Dispatcher.Invoke(async () =>
                     {
                         CardReaderStatus = "Đã phát hiện thẻ, đang xử lý...";
                         await HandleProcessOrderByCard(cardNumber);
@@ -446,34 +445,43 @@ namespace SmartStorePOS.ViewModels
         }
 
         /// <summary>
-        /// Xử lý khi người dùng ấn nút thanh toán
-        /// </summary>
-        //private async Task HandlePayment()
-        //{
-        //    if (!ValidateOrder())
-        //        return;
-
-        //    IsLoading = true;
-        //    OverlayText = "Đang thực hiện thanh toán...";
-        //    StateManager.TransitionTo(new PaymentProcessingState());
-
-        //    await ProcessPayment(PaymentMethodWindow.PaymentMethod.MembershipCard);
-        //}
-
-        /// <summary>
         /// Xử lý khi người dùng ấn nút thanh toán QR Code
         /// </summary>
-        //private async Task HandleQRCodePayment()
-        //{
-        //    if (!ValidateOrder())
-        //        return;
+        private void HandleQRCodePayment()
+        {
+            if (!ValidateOrder())
+                return;
 
-        //    IsLoading = true;
-        //    OverlayText = "Đang thực hiện thanh toán QR Code...";
-        //    StateManager.TransitionTo(new PaymentProcessingState());
+            IsLoading = true;
+            OverlayText = "Đang thực hiện thanh toán...";
+            StateManager.TransitionTo(new PaymentProcessingState());
 
-        //    await ProcessPayment(PaymentMethodWindow.PaymentMethod.QRCode);
-        //}
+            try
+            {
+                var qrWindow = new QRCodeWindow($"aistore://payment/{Order.OrderId}");
+                var resullt = qrWindow.ShowDialog();
+                if (resullt == true)
+                {
+                    qrWindow.Close();
+                }
+
+                //"Thanh toán thành công!";
+                //DialogService.ShowInfoDialog("Thông báo", $"Đã thanh toán thành công số tiền {paymentResponse.Amount:N0} VNĐ. Số dư thẻ còn lại: {paymentResponse.RemainBalance:N0} VNĐ.");
+                //StateManager.TransitionTo(new PaymentCompletedState());
+            }
+            catch (Exception ex)
+            {
+                OverlayText = ex.Message;
+                DialogService.ShowInfoDialog("Thông báo", $"{ex.Message}");
+                StateManager.TransitionTo(new OrderCreatedState());
+            }
+            finally
+            {
+                IsLoading = false;
+                IsShowOrderButton = true;
+                OverlayText = "";
+            }
+        }
 
         /// <summary>
         /// Xử lý khi người dùng ấn nút thanh toán thẻ thành viên

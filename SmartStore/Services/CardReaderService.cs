@@ -151,5 +151,16 @@ namespace SmartStorePOS.Services
             _cardDataBuffer.Clear();
             _isListening = false;
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public void FocusMainWindow()
+        {
+            if (_mainWindow != null)
+            {
+                _mainWindow.Focus();
+            }
+        }
     }
 }

@@ -25,6 +25,8 @@ namespace SmartStorePOS.Services
         /// </summary>
         Task StopListeningAsync();
 
+        void FocusMainWindow();
+
         /// <summary>
         /// Trạng thái đang lắng nghe
         /// </summary>

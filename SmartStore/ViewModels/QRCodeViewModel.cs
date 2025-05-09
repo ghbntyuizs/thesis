@@ -13,7 +13,7 @@ namespace SmartStorePOS.ViewModels
 {
     public class QRCodeViewModel : ViewModelBase
     {
-        private string _title = "QR Code Generator";
+        private string _title = "Mã QR Thanh toán";
         public string Title
         {
             get => _title;

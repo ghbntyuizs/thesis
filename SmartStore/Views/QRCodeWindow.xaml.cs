@@ -14,8 +14,10 @@ namespace SmartStorePOS.Views
         {
             InitializeComponent();
 
-            _viewModel = new QRCodeViewModel();
-            _viewModel.CloseAction = Close;
+            _viewModel = new QRCodeViewModel
+            {
+                CloseAction = Close
+            };
 
             DataContext = _viewModel;
         }
