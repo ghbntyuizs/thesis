@@ -1,6 +1,7 @@
 using SmartStorePOS.Helpers;
 using SmartStorePOS.Models;
 using System.Configuration;
+using System.IO;
 using System.Windows.Media.Imaging;
 
 namespace SmartStorePOS.Services
@@ -85,6 +86,16 @@ namespace SmartStorePOS.Services
                     _imageUrl1 = ConfigurationManager.AppSettings["Img1Url"];
                     _imageUrl2 = ConfigurationManager.AppSettings["Img2Url"];
                     _imageUrl3 = ConfigurationManager.AppSettings["Img3Url"];
+                }
+
+                // xem nếu config là mock từ file thì 
+                if (!string.IsNullOrEmpty(ConfigurationManager.AppSettings["MockOrderFilePath"])) 
+                {
+                    string orderString = File.ReadAllText(ConfigurationManager.AppSettings["MockOrderFilePath"]);
+                    return System.Text.Json.JsonSerializer.Deserialize<Order>(orderString, new System.Text.Json.JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
                 }
 
                 // Gọi API để tạo đơn hàng

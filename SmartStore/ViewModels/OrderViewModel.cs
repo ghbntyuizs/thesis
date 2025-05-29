@@ -66,6 +66,9 @@ namespace SmartStorePOS.ViewModels
         private BitmapSource _capturedImage3;
 
         private decimal _total;
+        private decimal _totalItemDiscount;
+        private decimal _totalBeforeDiscount;
+        private decimal _orderDiscount;
 
         public Action? FocusMainWindow;
 
@@ -176,6 +179,25 @@ namespace SmartStorePOS.ViewModels
             get => _total;
             set => SetProperty(ref _total, value);
         }
+
+        public decimal TotalItemDiscount
+        {
+            get => _totalItemDiscount;
+            set => SetProperty(ref _totalItemDiscount, value);
+        }
+
+        public decimal TotalBeforeDiscount
+        {
+            get => _totalBeforeDiscount;
+            set => SetProperty(ref _totalBeforeDiscount, value);
+        }
+
+        public decimal OrderDiscount
+        {
+            get => _orderDiscount;
+            set => SetProperty(ref _orderDiscount, value);
+        }
+
 
         public string ImageUrl1
         {
@@ -606,22 +628,23 @@ namespace SmartStorePOS.ViewModels
                             ProductName = item.ProductName,
                             UnitPrice = item.UnitPrice,
                             Count = item.Count,
-                            Total = item.Total
+                            Total = item.Total,
+                            Discount = item.Discount,
+                            TotalBeforeDiscount = item.TotalBeforeDiscount
                         });
                     }
                 }
 
                 // Cập nhật tổng tiền
                 Total = order.Total;
+                TotalItemDiscount = order.TotalItemDiscount;
+                TotalBeforeDiscount = order.TotalBeforeDiscount;
+                OrderDiscount = order.OrderDiscount;
                 OnPropertyChanged(nameof(Total));
 
-                // Cập nhật đơn hàng hiện tại
-                if (Order != null)
-                {
-                    Order.Items = new System.Collections.Generic.List<OrderItem>(Items);
-                    Order.Total = Total;
-                    Order.OrderId = order.OrderId;
-                }
+                Order.Items = [.. Items];
+                Order.Total = Total;
+                Order.OrderId = order.OrderId;
             }
             catch (Exception ex)
             {

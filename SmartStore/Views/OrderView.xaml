@@ -131,9 +131,89 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                     <TextBlock Grid.Row="0" Text="Danh sách sản phẩm" FontSize="16" FontWeight="SemiBold" Margin="10"/>
+                    
+                    <!-- Dòng tổng được thêm vào Grid.Row="2" -->
+                    <Grid Grid.Row="2" Margin="10" Background="#F0F0F0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="0.8*"/>
+                            <ColumnDefinition Width="0.5*"/>
+                            <ColumnDefinition Width="0.8*"/>
+                            <ColumnDefinition Width="0.6*"/>
+                            <ColumnDefinition Width="0.8*"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <!-- Dòng tổng thành tiền trước giảm giá -->
+                        <Border Grid.Row="0" Grid.Column="0" BorderBrush="#CCCCCC" BorderThickness="0,2,0,0" Padding="10,8">
+                            <TextBlock Text="Tổng thành tiền" FontWeight="SemiBold" VerticalAlignment="Center" 
+                                       Margin="5,0" Foreground="#333333"/>
+                        </Border>
+                        
+                        <Border Grid.Row="0" Grid.Column="1" BorderBrush="#CCCCCC" BorderThickness="0,2,0,0" Padding="10,8">
+                            <!-- Cột loại để trống -->
+                        </Border>
+                        
+                        <Border Grid.Row="0" Grid.Column="2" BorderBrush="#CCCCCC" BorderThickness="0,2,0,0" Padding="10,8">
+                            <!-- Cột số lượng để trống -->
+                        </Border>
+                        
+                        <Border Grid.Row="0" Grid.Column="3" BorderBrush="#CCCCCC" BorderThickness="0,2,0,0" Padding="10,8">
+                            <TextBlock Text="{Binding TotalBeforeDiscount, StringFormat='{}{0:N0} đ'}" 
+                                       FontWeight="SemiBold" VerticalAlignment="Center" HorizontalAlignment="Right"
+                                       Margin="0,0,5,0"/>
+                        </Border>
+                        
+                        <Border Grid.Row="0" Grid.Column="4" BorderBrush="#CCCCCC" BorderThickness="0,2,0,0" Padding="10,8">
+                            <TextBlock Text="{Binding TotalItemDiscount, StringFormat='{}{0:N0} đ'}" 
+                                       FontWeight="SemiBold" VerticalAlignment="Center" HorizontalAlignment="Right"
+                                       Margin="0,0,5,0"/>
+                        </Border>
+                        
+                        <Border Grid.Row="0" Grid.Column="5" BorderBrush="#CCCCCC" BorderThickness="0,2,0,0" Padding="10,8">
+                            <!-- Cột thành tiền trống (sẽ tính ở dòng tổng cuối) -->
+                        </Border>
+                        
+                        <!-- Dòng giảm giá cho đơn hàng -->
+                        <Border Grid.Row="1" Grid.Column="0" BorderBrush="#CCCCCC" BorderThickness="0,1,0,0" Padding="10,8">
+                            <TextBlock Text="Giảm giá đơn hàng" FontWeight="SemiBold" VerticalAlignment="Center" 
+                                       Margin="5,0" Foreground="#333333"/>
+                        </Border>
+                        
+                        <Border Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" BorderBrush="#CCCCCC" BorderThickness="0,1,0,0" Padding="10,8">
+                            <!-- Phần này để trống -->
+                        </Border>
+                        
+                        <Border Grid.Row="1" Grid.Column="4" BorderBrush="#CCCCCC" BorderThickness="0,1,0,0" Padding="10,8">
+                            <TextBlock Text="{Binding OrderDiscount, StringFormat='{}{0:N0} đ'}" 
+                                       FontWeight="SemiBold" VerticalAlignment="Center" HorizontalAlignment="Right"
+                                       Margin="0,0,5,0"/>
+                        </Border>
+                        
+                        <Border Grid.Row="1" Grid.Column="5" BorderBrush="#CCCCCC" BorderThickness="0,1,0,0" Padding="10,8">
+                            <!-- Cột thành tiền trống (sẽ tính ở dòng tổng cuối) -->
+                        </Border>
+                        
+                        <!-- Dòng tổng cuối cùng -->
+                        <Border Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="5" Background="#E0F2F1" BorderBrush="#CCCCCC" BorderThickness="0,1,0,0" Padding="10,8">
+                            <TextBlock Text="TỔNG TIỀN THANH TOÁN" FontWeight="Bold" VerticalAlignment="Center" 
+                                       Margin="5,0" Foreground="#333333"/>
+                        </Border>
+                        
+                        <Border Grid.Row="2" Grid.Column="5" Background="#E0F2F1" BorderBrush="#CCCCCC" BorderThickness="0,1,0,0" Padding="10,8">
+                            <TextBlock Text="{Binding Total, StringFormat='{}{0:N0} đ'}" 
+                                       FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Right" 
+                                       Margin="0,0,5,0" Foreground="#00796B" FontSize="14"/>
+                        </Border>
+                    </Grid>
 
                     <DataGrid Grid.Row="1" ItemsSource="{Binding Items}" 
                           AutoGenerateColumns="False" 
@@ -149,20 +229,71 @@
                           RowHeight="30"
                           CanUserResizeColumns="True"
                           CanUserSortColumns="True"
+                          CanUserReorderColumns="False"
                           HeadersVisibility="Column">
                         <DataGrid.Resources>
                             <Style TargetType="DataGridColumnHeader">
-                                <Setter Property="Background" Value="#F0F0F0"/>
+                                <Setter Property="Background" Value="#ECECEC"/>
                                 <Setter Property="FontWeight" Value="SemiBold"/>
                                 <Setter Property="Padding" Value="10,5"/>
+                                <Setter Property="BorderThickness" Value="0,0,1,2"/>
+                                <Setter Property="BorderBrush" Value="#CCCCCC"/>
+                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                <Setter Property="ContentTemplate">
+                                    <Setter.Value>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}" 
+                                                       TextWrapping="Wrap" 
+                                                       TextAlignment="Center" 
+                                                       HorizontalAlignment="Center"/>
+                                        </DataTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                            <!-- Chữ căn trái -->
+                            <Style x:Key="LeftAlignStyle" TargetType="TextBlock">
+                                <Setter Property="HorizontalAlignment" Value="Left"/>
+                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                <Setter Property="Margin" Value="5,0"/>
+                            </Style>
+                            <!-- Số căn phải -->
+                            <Style x:Key="RightAlignStyle" TargetType="TextBlock">
+                                <Setter Property="HorizontalAlignment" Value="Right"/>
+                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                <Setter Property="Margin" Value="0,0,5,0"/>
                             </Style>
                         </DataGrid.Resources>
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Tên sản phẩm" Binding="{Binding ProductName}" Width="*"/>
-                            <DataGridTextColumn Header="Loại" Binding="{Binding CategoryName}" Width="0.8*"/>
-                            <DataGridTextColumn Header="Số lượng" Binding="{Binding Count}" Width="0.5*"/>
-                            <DataGridTextColumn Header="Đơn giá" Binding="{Binding UnitPrice, StringFormat='{}{0:N0} đ'}" Width="0.8*"/>
-                            <DataGridTextColumn Header="Thành tiền" Binding="{Binding Total, StringFormat='{}{0:N0} đ'}" Width="0.8*"/>
+                            <DataGridTextColumn Header="Tên sản phẩm" Binding="{Binding ProductName}" Width="*">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource LeftAlignStyle}"/>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Loại" Binding="{Binding CategoryName}" Width="0.8*">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource LeftAlignStyle}"/>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Số lượng" Binding="{Binding Count}" Width="0.5*">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource RightAlignStyle}"/>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Đơn giá" Binding="{Binding UnitPrice, StringFormat='{}{0:N0} đ'}" Width="0.8*">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource RightAlignStyle}"/>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Chiết khấu" Binding="{Binding Discount, StringFormat='{}{0:N0} đ'}" Width="0.6*">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource RightAlignStyle}"/>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Thành tiền" Binding="{Binding Total, StringFormat='{}{0:N0} đ'}" Width="0.8*">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource RightAlignStyle}"/>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
@@ -229,14 +360,14 @@
                     </Border>-->
                     
                     <!-- Total Amount -->
-                    <Border Background="#E0F2F1" BorderBrush="#B2DFDB" BorderThickness="1" CornerRadius="4" 
+                    <!-- <Border Background="#E0F2F1" BorderBrush="#B2DFDB" BorderThickness="1" CornerRadius="4" 
                         Padding="15,8" Margin="0,0,20,0">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock  Text="Tổng tiền: " FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
                             <TextBlock Text="{Binding Total, StringFormat='{}{0:N0} đ'}" FontSize="16" FontWeight="Bold" 
                                    Foreground="#00796B" VerticalAlignment="Center"/>
                         </StackPanel>
-                    </Border>
+                    </Border> -->
 
                     <!-- Cancel Button Moved to Right Side -->
                     <Button Command="{Binding CancelCommand}" Visibility="{Binding IsShowCancelButton, Converter={StaticResource BooleanToVisibilityConverter}}" Width="120" Height="60" 

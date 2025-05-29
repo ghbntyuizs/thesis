@@ -67,6 +67,9 @@ namespace SmartStorePOS.ViewModels.States
             context.Items.Clear();
             context.Order = null;
             context.Total = 0;
+            context.TotalBeforeDiscount = 0;
+            context.TotalItemDiscount = 0;
+            context.OrderDiscount = 0;
             context.InitializeOrder();
         }
 
@@ -94,6 +97,9 @@ namespace SmartStorePOS.ViewModels.States
             context.Items.Clear();
             context.Order = null;
             context.Total = 0;
+            context.TotalBeforeDiscount = 0;
+            context.TotalItemDiscount = 0;
+            context.OrderDiscount = 0;
             context.InitializeOrder();
         }
     }

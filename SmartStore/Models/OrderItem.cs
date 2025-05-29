@@ -10,6 +10,8 @@ namespace SmartStorePOS.Models
         private string _productName;
         private string _categoryId;
         private string _categoryName;
+        private decimal _discount;
+        private decimal _totalBeforeDiscount;
         private int _count;
         private decimal _unitPrice;
         private decimal _total;
@@ -109,9 +111,37 @@ namespace SmartStorePOS.Models
             }
         }
 
+        public decimal Discount
+        {
+            get => _discount;
+            set
+            {
+                if (_discount != value)
+                {
+                    _discount = value;
+                    OnPropertyChanged();
+                    UpdateTotal();
+                }
+            }
+        }
+
+        public decimal TotalBeforeDiscount
+        {
+            get => _totalBeforeDiscount;
+            set
+            {
+                if (_totalBeforeDiscount != value)
+                {
+                    _totalBeforeDiscount = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
         private void UpdateTotal()
         {
-            Total = Count * UnitPrice;
+            TotalBeforeDiscount = Count * UnitPrice;
+            Total = TotalBeforeDiscount - Discount;
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

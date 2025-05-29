@@ -1,0 +1,60 @@
+{
+  "orderId": "305aa5f8-8817-4ef3-947b-6e3656bc6495",
+  "cardId": null,
+  "deviceId": "625f0c18-2248-4991-82ff-f7add17302d9",
+  "staffId": null,
+  "oldOrderId": null,
+  "card": null,
+  "device": null,
+  "staff": null,
+  "oldOrder": null,
+  "items": [
+    {
+      "productId": "a1b2c3d4-5678-90ab-cdef-123456789002",
+      "productName": "Chicken Floss Bread",
+      "categoryId": "f1a2b3c4-5678-90ab-cdef-123456789001",
+      "categoryName": "Bread & Pastries",
+      "count": 1,
+      "unitPrice": 20900.00,
+      "total": 20900.00,
+      "discount": 0,
+      "totalBeforeDiscount": 20900.00
+    },
+    {
+      "productId": "a1b2c3d4-5678-90ab-cdef-123456789003",
+      "productName": "Chicken Floss Sandwich",
+      "categoryId": "f1a2b3c4-5678-90ab-cdef-123456789001",
+      "categoryName": "Bread & Pastries",
+      "count": 1,
+      "unitPrice": 18900.00,
+      "total": 13900.00,
+      "discount": 5000,
+      "totalBeforeDiscount": 18900.00
+    },
+    {
+      "productId": "a1b2c3d4-5678-90ab-cdef-123456789005",
+      "productName": "Croissant",
+      "categoryId": "f1a2b3c4-5678-90ab-cdef-123456789001",
+      "categoryName": "Bread & Pastries",
+      "count": 1,
+      "unitPrice": 19900.00,
+      "total": 19900.00,
+      "discount": 0,
+      "totalBeforeDiscount": 19900.00
+    }
+  ],
+  "total": 48730.00,
+  "orderDiscount": 5970.0,
+  "totalItemDiscount": 5000,
+  "totalBeforeDiscount": 59700.00,
+  "status": "CREATED",
+  "createdDate": "2025-05-22T03:31:18.6510592Z",
+  "image1": "https://reinir.mooo.com/files/aa06332b0d74be2ae765.jpg",
+  "image2": "https://reinir.mooo.com/files/12388714b94b0a15535a.jpg",
+  "image3": "https://reinir.mooo.com/files/d9e025cd1b92a8ccf183.jpg",
+  "isCorrection": false,
+  "isFlagged": false,
+  "boxedImage": null,
+  "warning": null,
+  "orderCode": "ORDE345499250522"
+}
