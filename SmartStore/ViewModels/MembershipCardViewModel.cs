@@ -109,7 +109,7 @@ namespace SmartStorePOS.ViewModels
             {
                 // Remove any non-numeric characters (in case of unexpected input)
                 cardNumber = new string(cardNumber.Where(char.IsDigit).ToArray());
-                cardNumber = "0002008235";
+                //cardNumber = "0002008235";
 
                 if (string.IsNullOrEmpty(cardNumber))
                 {
